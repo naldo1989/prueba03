@@ -58,22 +58,31 @@ app.post("/registro", async (req, res) => {
 
 // Login
 app.post("/login", async (req, res) => {
-  const { dni, password } = req.body;
+  const { dni, password, escuela, mesa } = req.body;
 
   try {
     const result = await pool.query("SELECT * FROM usuarios WHERE dni = $1", [dni]);
     if (result.rows.length === 0)
-      return res.render("login", { error: "DNI no encontrado" });
+      return res.status(401).json({ error: "DNI no encontrado" });
 
     const usuario = result.rows[0];
     if (usuario.password !== password)
-      return res.render("login", { error: "Contraseña incorrecta" });
+      return res.status(401).json({ error: "Contraseña incorrecta" });
 
-    req.session.usuario = usuario;
-    res.send(`Bienvenido ${usuario.nombre} ${usuario.apellido}`);
+    // Guardar datos en la sesión
+    req.session.usuario = {
+      id: usuario.id,
+      nombre: usuario.nombre,
+      apellido: usuario.apellido,
+      dni: usuario.dni
+    };
+    req.session.escuela = escuela;
+    req.session.mesa = mesa;
+
+    res.json({ success: true, message: "Login exitoso" });
   } catch (err) {
     console.error("Error en login:", err);
-    res.render("login", { error: "Error al iniciar sesión" });
+    res.status(500).json({ error: "Error en login" });
   }
 });
 

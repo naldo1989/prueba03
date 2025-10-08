@@ -2,10 +2,7 @@ import { pool } from "./db.js";
 
 const initDB = async () => {
   try {
-    await pool.query(`
-      DROP TABLE usuarios;
-    `);
-    await pool.query(`
+      await pool.query(`
       CREATE TABLE IF NOT EXISTS usuarios (
         id SERIAL PRIMARY KEY,
         nombre VARCHAR(50) NOT NULL,

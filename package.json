@@ -1,0 +1,19 @@
+{
+  "name": "app-usuarios",
+  "version": "1.0.0",
+  "description": "App simple con login y PostgreSQL para Railway",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "initdb": "node init.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.20.3",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "express-session": "^1.18.1",
+    "pg": "^8.13.1"
+  }
+}

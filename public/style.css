@@ -2,6 +2,7 @@ body {
   font-family: Arial;
   max-width: 400px;
   margin: 40px auto;
+  background-color: black;
 }
 input, button {
   width: 100%;

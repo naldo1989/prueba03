@@ -17,6 +17,22 @@ const initDB = async () => {
     console.error("❌ Error creando tabla:", err);
     process.exit(1);
   }
+    try {
+      await pool.query(`
+      CREATE TABLE IF NOT EXISTS sesiones_usuario (
+       id SERIAL PRIMARY KEY,
+       usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+       nro_escuela VARCHAR(10) NOT NULL,
+       nro_mesa VARCHAR(10) NOT NULL,
+       fecha_inicio TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+    `);
+    console.log("✅ Tabla 'sesiones_usuarios' creada o ya existente.");
+    process.exit(0);
+  } catch (err) {
+    console.error("❌ Error creando tabla:", err);
+    process.exit(1);
+  }
 };
 
 initDB();

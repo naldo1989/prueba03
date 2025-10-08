@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Registro</title>
+</head>
+<body>
+  <h2>Registro de Usuario</h2>
+  <% if (typeof error !== 'undefined') { %>
+    <p style="color:red;"><%= error %></p>
+  <% } %>
+
+  <form action="/registro" method="POST">
+    <label>Nombre:</label><br>
+    <input type="text" name="nombre" required><br>
+    <label>Apellido:</label><br>
+    <input type="text" name="apellido" required><br>
+    <label>DNI:</label><br>
+    <input type="text" name="dni" required><br>
+    <button type="submit">Registrar</button>
+  </form>
+
+  <p><a href="/login">Volver al login</a></p>
+</body>
+</html>

@@ -34,5 +34,23 @@ const initDB = async () => {
     process.exit(1);
   }
 };
+ try {
+      await pool.query(`
+CREATE TABLE IF NOT EXISTS registros (
+    id SERIAL PRIMARY KEY,
+    sesion_id INTEGER NOT NULL REFERENCES sesiones_usuario(id) ON DELETE CASCADE,
+    nro_orden VARCHAR(100) NOT NULL,
+    cantidad_votos INTEGER NOT NULL,
+    fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+    `);
+    console.log("✅ Tabla 'registros' creada o ya existente.");
+    process.exit(0);
+  } catch (err) {
+    console.error("❌ Error creando tabla:", err);
+    process.exit(1);
+  }
+};
 
 initDB();

@@ -58,7 +58,7 @@ app.post("/registro", async (req, res) => {
 
 // Login
 app.post("/login", async (req, res) => {
-  const { dni, password, escuela, mesa } = req.body;
+  const { dni, password, nro_escuela, nro_mesa } = req.body;
 
   try {
     const result = await pool.query("SELECT * FROM usuarios WHERE dni = $1", [dni]);
@@ -76,8 +76,8 @@ app.post("/login", async (req, res) => {
       apellido: usuario.apellido,
       dni: usuario.dni
     };
-    req.session.escuela = escuela;
-    req.session.mesa = mesa;
+    req.session.nro_escuela = nro_escuela;
+    req.session.nro_mesa = nro_mesa;
 
     res.json({ success: true, message: "Login exitoso" });
   } catch (err) {

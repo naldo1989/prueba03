@@ -56,7 +56,7 @@ app.post("/registro", async (req, res) => {
   }
 });
 
-// Login
+// Login *************************************************************************
 app.post("/login", async (req, res) => {
   const { dni, password, nro_escuela, nro_mesa } = req.body;
 
@@ -70,11 +70,16 @@ app.post("/login", async (req, res) => {
       return res.status(401).json({ error: "Contraseña incorrecta" });
 
     // Guardar datos en la sesión
+        await pool.query(
+        'INSERT INTO sesiones_usuario (usuario_id, nro_escuela, nro_mesa) VALUES ($1, $2, $3)',
+        [user.id, nro_escuela, nro_mesa]
+      );
+      
     req.session.usuario = {
       id: usuario.id,
       nombre: usuario.nombre,
       apellido: usuario.apellido,
-      dni: usuario.dni
+      dni: usuario.dni,
     };
     req.session.nro_escuela = nro_escuela;
     req.session.nro_mesa = nro_mesa;

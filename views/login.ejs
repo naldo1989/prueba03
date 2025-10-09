@@ -14,10 +14,10 @@
     <input type="password" id="password" name="password" required><br><br>
 
     <label>N° de E:</label><br>
-    <input type="text" id="escuela" name="nro_escuela" required><br><br>
+    <input type="text" id="nro_escuela" name="nro_escuela" required><br><br>
 
     <label>N° de M:</label><br>
-    <input type="text" id="mesa" name="nro_mesa" required><br><br>
+    <input type="text" id="nro_mesa" name="nro_mesa" required><br><br>
 
     <button type="submit">Ingresar</button>
   </form>
@@ -29,8 +29,8 @@
       const datos = {
         dni: document.getElementById("dni").value,
         password: document.getElementById("password").value,
-        escuela: document.getElementById("nro_escuela").value,
-        mesa: document.getElementById("nro_mesa").value
+        nro_escuela: document.getElementById("nro_escuela").value,
+        nro_mesa: document.getElementById("nro_mesa").value
       };
 
       const res = await fetch("/login", {

@@ -1,0 +1,21 @@
+<h2>Bienvenido, <%= user.nombre %> <%= user.apellido %></h2>
+<p>Escuela: <%= user.nro_escuela %> | Mesa: <%= user.nro_mesa %></p>
+
+<form action="/registrar" method="POST">
+  <label>Número de orden:</label>
+  <input type="number" name="nro_orden" required>
+
+  <label>Cantidad de votos:</label>
+  <input type="number" name="cantidad_votos" required>
+
+  <button type="submit">Registrar</button>
+</form>
+
+<hr>
+
+<h3>Registros cargados:</h3>
+<ul>
+  <% registros.forEach(r => { %>
+    <li>Orden <%= r.nro_orden %> - Votos: <%= r.cantidad_votos %> - <%= r.fecha_registro.toLocaleString() %></li>
+  <% }) %>
+</ul>

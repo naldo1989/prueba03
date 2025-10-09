@@ -63,18 +63,18 @@ app.post("/login", async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM usuarios WHERE dni = $1", [dni]);
     if (result.rows.length === 0)
-      return res.status(401).json({ error: "DNI no encontrado" });
+      return res.render("login", { error: "DNI no encontrado" });
 
     const usuario = result.rows[0];
     if (usuario.password !== password)
-      return res.status(401).json({ error: "Contraseña incorrecta" });
+      return res.render("login", { error: "Contraseña incorrecta" });
 
-    // Guardar datos en la sesión
-        await pool.query(
-        'INSERT INTO sesiones_usuario (usuario_id, nro_escuela, nro_mesa) VALUES ($1, $2, $3)',
-        [usuario.id, nro_escuela, nro_mesa]
-      );
-      
+    // Guardar datos en la sesión y DB
+    await pool.query(
+      "INSERT INTO sesiones_usuario (usuario_id, nro_escuela, nro_mesa) VALUES ($1, $2, $3)",
+      [usuario.id, nro_escuela, nro_mesa]
+    );
+
     req.session.usuario = {
       id: usuario.id,
       nombre: usuario.nombre,
@@ -84,47 +84,16 @@ app.post("/login", async (req, res) => {
     req.session.nro_escuela = nro_escuela;
     req.session.nro_mesa = nro_mesa;
 
-    res.json({ success: true, message: "Login exitoso" });
+    //  Redirigir al dashboard después del login exitoso
+    res.redirect("/dashboard");
+
   } catch (err) {
     console.error("Error en login:", err);
-    res.status(500).json({ error: "Error en login" });
+    res.render("login", { error: "Error en login" });
   }
 });
 
-// Dashboard ********************
-app.get('/dashboard', async (req, res) => {
-  if (!req.session.usuario) {
-    return res.redirect('/');
-  }
-
-  const { id } = req.session.usuario;
-
-  try {
-    const sesionResult = await pool.query(
-      'SELECT id FROM sesiones_usuario WHERE usuario_id = $1 ORDER BY fecha_inicio DESC LIMIT 1',
-      [id]
-    );
-
-    if (sesionResult.rows.length === 0) {
-      return res.send('No se encontró sesión activa.');
-    }
-
-    const sesion_id = sesionResult.rows[0].id;
-
-    const registros = await pool.query(
-      'SELECT * FROM registros WHERE sesion_id = $1 ORDER BY id DESC',
-      [sesion_id]
-    );
-
-    res.render('dashboard', {
-      usuario: req.session.usuario,
-      registros: registros.rows
-    });
-  } catch (error) {
-    console.error(error);
-    res.send('Error al cargar el dashboard.');
-  }
-});
+/////Dashboard ************
 
 // Registrar nuevo voto
 app.post('/registrar', async (req, res) => {

@@ -28,7 +28,7 @@ app.use(
   })
 );
 
-// ----------- RUTAS -----------
+// ----------- RUTAS -------------
 
 // Página principal -> redirige al login
 app.get("/", (req, res) => res.redirect("/login"));

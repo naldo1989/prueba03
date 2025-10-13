@@ -1,27 +1,32 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Registro</title>
-  <link rel="stylesheet" href="/styles.css">
+  <meta charset="UTF-8" />
+  <title>Registro de votos</title>
 </head>
-<body>
-  <h1>Registro de votos</h1>
-  <p>Usuario: <%= usuario %></p>
-  <p>Escuela Nº <%= nro_escuela %> — Mesa Nº <%= nro_mesa %></p>
+<body style="background-color: #f4f4f4; font-family: sans-serif;">
+  <h2>Registro de votos</h2>
+
+  <p><strong>Usuario:</strong> <%= usuario %></p>
+  <p><strong>Escuela:</strong> <%= nro_escuela %></p>
+  <p><strong>Mesa:</strong> <%= nro_mesa %></p>
+
+  <hr>
 
   <form action="/registrar" method="POST">
-    <label for="nro_orden">Nro de orden:</label>
-    <input type="number" name="nro_orden" required><br>
+    <label>N° de orden:</label><br>
+    <input type="number" name="nro_orden" required><br><br>
 
-    <label for="cantidad_votos">Cantidad de votos:</label>
-    <input type="number" name="cantidad_votos" required><br>
+    <label>Cantidad de votos:</label><br>
+    <input type="number" name="cantidad_votos" required><br><br>
 
-    <button type="submit">Registro</button>
+    <button type="submit">Registrar</button>
   </form>
 
-  <form action="/logout" method="GET">
-    <button type="submit">Cerrar sesión</button>
+  <hr>
+
+  <form action="/logout" method="POST">
+    <button type="submit" style="background:red; color:white;">Cerrar sesión</button>
   </form>
 </body>
 </html>

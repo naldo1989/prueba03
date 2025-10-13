@@ -1,53 +1,35 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <title>Login</title>
-</head>
-<body style="background-color: gray;">
-  <h2>Ingreso al sistema</h2>
-  <form id="formLogin">
-    <label>DNI:</label><br>
-    <input type="text" id="dni" name="dni" required><br><br>
+app.post("/login", async (req, res) => {
+  const { dni, password, nro_escuela, nro_mesa } = req.body;
 
-    <label>Contraseña:</label><br>
-    <input type="password" id="password" name="password" required><br><br>
+  try {
+    const result = await pool.query("SELECT * FROM usuarios WHERE dni = $1", [dni]);
+    if (result.rows.length === 0)
+      return res.json({ success: false, error: "DNI no encontrado" });
 
-    <label>N° de E:</label><br>
-    <input type="text" id="nro_escuela" name="nro_escuela" required><br><br>
+    const usuario = result.rows[0];
+    if (usuario.password !== password)
+      return res.json({ success: false, error: "Contraseña incorrecta" });
 
-    <label>N° de M:</label><br>
-    <input type="text" id="nro_mesa" name="nro_mesa" required><br><br>
+    // Guardar datos en la sesión y DB
+    await pool.query(
+      "INSERT INTO sesiones_usuario (usuario_id, nro_escuela, nro_mesa) VALUES ($1, $2, $3)",
+      [usuario.id, nro_escuela, nro_mesa]
+    );
 
-    <button type="submit">Ingresar</button>
-  </form>
-<p>¿No tienes cuenta? <a href="/registro">Registrate aquí</a></p>
+    req.session.usuario = {
+      id: usuario.id,
+      nombre: usuario.nombre,
+      apellido: usuario.apellido,
+      dni: usuario.dni,
+    };
+    req.session.nro_escuela = nro_escuela;
+    req.session.nro_mesa = nro_mesa;
 
-  <script>
-    document.getElementById("formLogin").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const datos = {
-        dni: document.getElementById("dni").value,
-        password: document.getElementById("password").value,
-        nro_escuela: document.getElementById("nro_escuela").value,
-        nro_mesa: document.getElementById("nro_mesa").value
-      };
+    // ✅ En lugar de redirigir, devolvemos un JSON
+    res.json({ success: true, redirect: "/dashboard" });
 
-      const res = await fetch("/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(datos)
-      });
-      const data = await res.json();
-
-      if (data.success) {
-        alert("Login exitoso");
-        window.location.href = "/"; // o a donde quieras redirigir
-      } else {
-        alert(data.error || "Error al iniciar sesión");
-      }
-    });
-  </script>
-</body>
-</html>
-
+  } catch (err) {
+    console.error("Error en login:", err);
+    res.json({ success: false, error: "Error en login" });
+  }
+});

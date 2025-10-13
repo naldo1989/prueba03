@@ -63,18 +63,13 @@ app.post("/login", async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM usuarios WHERE dni = $1", [dni]);
     if (result.rows.length === 0)
-      return res.json({ success: false, error: "DNI no encontrado" });
+      return res.render("login", { error: "DNI no encontrado" });
 
     const usuario = result.rows[0];
     if (usuario.password !== password)
-      return res.json({ success: false, error: "Contraseña incorrecta" });
+      return res.render("login", { error: "Contraseña incorrecta" });
 
-    // Guardar datos en la sesión y DB
-    await pool.query(
-      "INSERT INTO sesiones_usuario (usuario_id, nro_escuela, nro_mesa) VALUES ($1, $2, $3)",
-      [usuario.id, nro_escuela, nro_mesa]
-    );
-
+    // Guardar sesión
     req.session.usuario = {
       id: usuario.id,
       nombre: usuario.nombre,
@@ -84,14 +79,21 @@ app.post("/login", async (req, res) => {
     req.session.nro_escuela = nro_escuela;
     req.session.nro_mesa = nro_mesa;
 
-    // ✅ En lugar de redirigir, devolvemos un JSON
-    res.json({ success: true, redirect: "/dashboard" });
+    // Guardar sesión en la DB
+    await pool.query(
+      "INSERT INTO sesiones_usuario (usuario_id, nro_escuela, nro_mesa) VALUES ($1, $2, $3)",
+      [usuario.id, nro_escuela, nro_mesa]
+    );
+
+    //  Redirige al dashboard
+    res.redirect("/dashboard");
 
   } catch (err) {
     console.error("Error en login:", err);
-    res.json({ success: false, error: "Error en login" });
+    res.render("login", { error: "Error en login" });
   }
 });
+
 
 /////Dashboard ************
 

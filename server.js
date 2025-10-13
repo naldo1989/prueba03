@@ -63,11 +63,11 @@ app.post("/login", async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM usuarios WHERE dni = $1", [dni]);
     if (result.rows.length === 0)
-      return res.render("login", { error: "DNI no encontrado" });
+      return res.json({ success: false, error: "DNI no encontrado" });
 
     const usuario = result.rows[0];
     if (usuario.password !== password)
-      return res.render("login", { error: "Contraseña incorrecta" });
+      return res.json({ success: false, error: "Contraseña incorrecta" });
 
     // Guardar datos en la sesión y DB
     await pool.query(
@@ -84,13 +84,12 @@ app.post("/login", async (req, res) => {
     req.session.nro_escuela = nro_escuela;
     req.session.nro_mesa = nro_mesa;
 
-    //  Redirigir al dashboard después del login exitoso
-    res.redirect("/dashboard");
+    // ✅ En lugar de redirigir, devolvemos un JSON
+    res.json({ success: true, redirect: "/dashboard" });
 
-    
   } catch (err) {
     console.error("Error en login:", err);
-    res.render("login", { error: "Error en login" });
+    res.json({ success: false, error: "Error en login" });
   }
 });
 

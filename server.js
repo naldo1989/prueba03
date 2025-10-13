@@ -87,6 +87,7 @@ app.post("/login", async (req, res) => {
     //  Redirigir al dashboard después del login exitoso
     res.redirect("/dashboard");
 
+    
   } catch (err) {
     console.error("Error en login:", err);
     res.render("login", { error: "Error en login" });
@@ -94,6 +95,23 @@ app.post("/login", async (req, res) => {
 });
 
 /////Dashboard ************
+
+app.get("/dashboard", (req, res) => {
+  if (!req.session.usuario) {
+    return res.redirect("/login");
+  }
+
+  const { nombre, apellido } = req.session.usuario;
+  const { nro_escuela, nro_mesa } = req.session;
+
+  // Renderizamos una vista EJS con un formulario para registrar votos
+  res.render("dashboard", {
+    usuario: `${nombre} ${apellido}`,
+    nro_escuela,
+    nro_mesa
+  });
+});
+
 
 // Registrar nuevo voto
 app.post('/registrar', async (req, res) => {

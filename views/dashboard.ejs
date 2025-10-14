@@ -2,10 +2,11 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Registro</title>
+  <title>Registro de votos</title>
 </head>
-<body style="background-color: gray;; font-family: sans-serif;">
-  <h2>Registro</h2>
+<body style="background-color: gray; font-family: sans-serif;">
+
+  <h2>Registro de votos</h2>
 
   <p><strong>Usuario:</strong> <%= usuario %></p>
   <p><strong>Escuela:</strong> <%= nro_escuela %></p>
@@ -13,21 +14,60 @@
 
   <hr>
 
-  <form action="/registrar" method="POST">
+  <form id="formRegistro">
     <label>N° de orden:</label><br>
-    <input type="text" name="nro_orden" required><br><br>
+    <input type="text" id="nro_orden" name="nro_orden" required><br><br>
 
     <label>Cantidad:</label><br>
-    <input type="number" name="cantidad_votos" required><br><br>
+    <input type="number" id="cantidad_votos" name="cantidad_votos" required><br><br>
 
     <button type="submit">Registrar</button>
   </form>
 
-  <hr>
+  <p id="mensaje" style="font-weight: bold; margin-top: 10px;"></p>
 
+  <hr>
 
   <form action="/logout" method="POST">
     <button type="submit" style="background:red; color:white;">Cerrar sesión</button>
   </form>
+
+  <script>
+    document.getElementById("formRegistro").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const nro_orden = document.getElementById("nro_orden").value;
+      const cantidad_votos = document.getElementById("cantidad_votos").value;
+      const mensaje = document.getElementById("mensaje");
+
+      try {
+        const res = await fetch("/registrar", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nro_orden, cantidad_votos })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          mensaje.style.color = "green";
+          mensaje.textContent = data.message || "✅ Registro exitoso";
+          e.target.reset();
+        } else {
+          mensaje.style.color = "red";
+          mensaje.textContent = data.message || "❌ Error al registrar";
+        }
+
+        // Limpia el mensaje después de 3 segundos
+        setTimeout(() => mensaje.textContent = "", 3000);
+
+      } catch (err) {
+        console.error(err);
+        mensaje.style.color = "red";
+        mensaje.textContent = "⚠️ Error al conectar con el servidor.";
+      }
+    });
+  </script>
+
 </body>
 </html>

@@ -137,7 +137,7 @@ app.post('/registrar', async (req, res) => {
     const sesion_id = sesion.rows[0].id;
 
     await pool.query(
-      'INSERT INTO registros (sesion_id, nro_orden, cantidad_votos) VALUES ($1, $2, $3)',
+      'INSERT INTO registros (sesion_id, nro_orden, cantidad_votos, fecha_registro) VALUES ($1, $2, $3, NOW())',
       [sesion_id, nro_orden, cantidad_votos]
     );
 

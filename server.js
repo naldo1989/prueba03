@@ -148,7 +148,7 @@ app.post('/registrar', async (req, res) => {
       'INSERT INTO registros (sesion_id, nro_orden, cantidad_votos, fecha_registro) VALUES ($1, $2, $3, NOW())',
       [usuario_id, nro_orden, cantidad_votos]
     );
-
+     res.render("registro", { mensaje: `Voto guardado con exito!` });
     res.redirect('/dashboard');
   } catch (error) {
     console.error(error);

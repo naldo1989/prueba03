@@ -3,8 +3,30 @@
 <head>
   <meta charset="UTF-8" />
   <title>Registro de votos</title>
+  <style>
+    body {
+      background-color: gray;
+      font-family: sans-serif;
+      padding: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      background: white;
+    }
+    th, td {
+      border: 1px solid #222;
+      padding: 8px;
+      text-align: center;
+    }
+    th {
+      background: #333;
+      color: white;
+    }
+  </style>
 </head>
-<body style="background-color: gray; font-family: sans-serif;">
+<body>
 
   <h2>Registro de votos</h2>
 
@@ -28,11 +50,51 @@
 
   <hr>
 
+  <h3>Registros cargados</h3>
+  <table id="tablaRegistros">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>N° Orden</th>
+        <th>Cantidad de votos</th>
+        <th>Fecha</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <hr>
+
   <form action="/logout" method="POST">
     <button type="submit" style="background:red; color:white;">Cerrar sesión</button>
   </form>
 
   <script>
+    // Cargar registros existentes
+    async function cargarRegistros() {
+      const res = await fetch("/registros");
+      const data = await res.json();
+      const tbody = document.querySelector("#tablaRegistros tbody");
+      tbody.innerHTML = "";
+
+      if (data.length === 0) {
+        tbody.innerHTML = "<tr><td colspan='4'>Sin registros aún</td></tr>";
+        return;
+      }
+
+      data.forEach((r, i) => {
+        const fila = `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${r.nro_orden}</td>
+            <td>${r.cantidad_votos}</td>
+            <td>${new Date(r.fecha_registro).toLocaleString()}</td>
+          </tr>`;
+        tbody.innerHTML += fila;
+      });
+    }
+
+    // Envío del formulario
     document.getElementById("formRegistro").addEventListener("submit", async (e) => {
       e.preventDefault();
 
@@ -53,20 +115,22 @@
           mensaje.style.color = "green";
           mensaje.textContent = data.message || "✅ Registro exitoso";
           e.target.reset();
+          await cargarRegistros(); // 🔁 recarga la tabla
         } else {
           mensaje.style.color = "red";
           mensaje.textContent = data.message || "❌ Error al registrar";
         }
 
-        // Limpia el mensaje después de 3 segundos
         setTimeout(() => mensaje.textContent = "", 3000);
-
       } catch (err) {
         console.error(err);
         mensaje.style.color = "red";
         mensaje.textContent = "⚠️ Error al conectar con el servidor.";
       }
     });
+
+    // Carga inicial
+    cargarRegistros();
   </script>
 
 </body>

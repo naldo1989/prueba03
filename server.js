@@ -148,6 +148,18 @@ app.post('/registrar', async (req, res) => {
   }
 });
 
+// ----------- LOGOUT -----------
+app.post("/logout", (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      console.error("Error al cerrar sesión:", err);
+      return res.send("Error al cerrar sesión.");
+    }
+    res.clearCookie("connect.sid"); // Limpia la cookie de sesión
+    res.redirect("/login");
+  });
+});
+
 
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));

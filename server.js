@@ -156,6 +156,33 @@ app.post('/registrar', async (req, res) => {
 });
 
 
+//------- Muestra la Tabla con los Registros------
+app.get("/registros", async (req, res) => {
+  if (!req.session.usuario) {
+    return res.status(401).json([]);
+  }
+
+  const usuario_id = req.session.usuario.id;
+
+  try {
+    const result = await pool.query(
+      `SELECT r.nro_orden, r.cantidad_votos, r.fecha_registro
+       FROM registros r
+       JOIN sesiones_usuario s ON r.sesion_id = s.id
+       WHERE s.usuario_id = $1
+       ORDER BY r.fecha_registro DESC`,
+      [usuario_id]
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Error al obtener registros:", error);
+    res.status(500).json([]);
+  }
+});
+
+
+
 // ----------- LOGOUT -----------
 app.post("/logout", (req, res) => {
   req.session.destroy((err) => {

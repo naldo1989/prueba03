@@ -81,7 +81,7 @@ app.post("/login", async (req, res) => {
 
     // Guardar sesión en la DB
     await pool.query(
-      "INSERT INTO sesiones_usuario (usuario_id, nro_escuela, nro_mesa) VALUES ($1, $2, $3)",
+      "INSERT INTO sesiones_usuario (id, nro_escuela, nro_mesa, fecha_inicio) VALUES ($1, $2, $3,NOW())",
       [usuario.id, nro_escuela, nro_mesa]
     );
 

@@ -23,7 +23,40 @@
     <button type="submit">Registrar</button>
   </form>
 
+<p id="mensaje"></p>
   <hr>
+<script>
+  document.getElementById('formRegistro').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const formData = {
+      nro_orden: e.target.nro_orden.value,
+      cantidad_votos: e.target.cantidad_votos.value
+    };
+
+    const res = await fetch('/registrar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData)
+    });
+
+    const data = await res.json();
+    const msg = document.getElementById('mensaje');
+
+    if (data.success) {
+      msg.style.color = "green";
+      msg.textContent = data.message;
+      e.target.reset(); // limpia el formulario
+    } else {
+      msg.style.color = "red";
+      msg.textContent = data.message;
+    }
+
+    // borra el mensaje luego de unos segundos
+    setTimeout(() => msg.textContent = '', 3000);
+  });
+</script>
+
 
   <form action="/logout" method="POST">
     <button type="submit" style="background:red; color:white;">Cerrar sesión</button>

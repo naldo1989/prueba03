@@ -146,7 +146,7 @@ app.post('/registrar', async (req, res) => {
 
     await pool.query(
       'INSERT INTO registros (sesion_id, nro_orden, cantidad_votos, fecha_registro) VALUES ($1, $2, $3, NOW())',
-      [sesion_id, nro_orden, cantidad_votos]
+      [usuario_id, nro_orden, cantidad_votos]
     );
 
     res.redirect('/dashboard');

@@ -83,7 +83,7 @@ app.post("/login", async (req, res) => {
     try {
   await pool.query(
     "INSERT INTO sesiones_usuario (usuario_id, nro_escuela, nro_mesa, fecha_inicio) VALUES ($1, $2, $3, NOW())",
-    [usuario.dni, nro_escuela, nro_mesa]
+    [usuario.id, nro_escuela, nro_mesa]
   );
   console.log(" Sesión guardada en la base de datos");
 } catch (error) {

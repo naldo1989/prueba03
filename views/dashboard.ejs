@@ -2,147 +2,132 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Panel de Registro</title>
+  <title>Registro de votos</title>
   <style>
     body {
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      font-family: 'Segoe UI', sans-serif;
-      height: 100vh;
-      margin: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      color: #333;
+      background-color: gray;
+      font-family: sans-serif;
     }
-
-    .dashboard-container {
-      background: #fff;
-      padding: 30px 40px;
-      border-radius: 16px;
-      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+    table {
       width: 100%;
-      max-width: 420px;
+      border-collapse: collapse;
+      margin-top: 10px;
+      background: white;
+    }
+    th, td {
+      border: 1px solid black;
+      padding: 6px;
       text-align: center;
     }
-
-    h2 {
-      margin-bottom: 15px;
-      color: #444;
-    }
-
-    .info {
-      background: #f2f2f2;
-      padding: 10px;
-      border-radius: 8px;
-      margin-bottom: 15px;
-      text-align: left;
-      font-size: 14px;
-    }
-
-    label {
-      display: block;
-      text-align: left;
-      margin-top: 12px;
-      font-weight: 600;
-      color: #555;
-    }
-
-    input {
-      width: 100%;
-      padding: 10px;
-      margin-top: 5px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 15px;
-      transition: border-color 0.3s;
-    }
-
-    input:focus {
-      border-color: #667eea;
-      outline: none;
-    }
-
-    button {
-      margin-top: 20px;
-      background: #667eea;
+    th {
+      background-color: #333;
       color: white;
-      border: none;
-      padding: 10px 15px;
-      border-radius: 8px;
-      width: 100%;
-      font-size: 16px;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-
-    button:hover {
-      background: #5563c1;
-    }
-
-    .logout-btn {
-      background: #d9534f;
-      margin-top: 10px;
-    }
-
-    .logout-btn:hover {
-      background: #b52b27;
-    }
-
-    .mensaje {
-      margin-top: 15px;
-      font-weight: bold;
-      color: #28a745;
-      display: none;
     }
   </style>
 </head>
 <body>
-  <div class="dashboard-container">
-    <h2>Registro de Votos</h2>
+  <h2>Registro de votos</h2>
 
-    <div class="info">
-      <p><strong>Usuario:</strong> <%= usuario %></p>
-      <p><strong>Escuela:</strong> <%= nro_escuela %></p>
-      <p><strong>Mesa:</strong> <%= nro_mesa %></p>
-    </div>
+  <p><strong>Usuario:</strong> <%= usuario %></p>
+  <p><strong>Escuela:</strong> <%= nro_escuela %></p>
+  <p><strong>Mesa:</strong> <%= nro_mesa %></p>
 
-    <form id="registroForm">
-      <label>N° de orden:</label>
-      <input type="text" name="nro_orden" required>
+  <hr>
 
-      <label>Cantidad de votos:</label>
-      <input type="number" name="cantidad_votos" required>
+  <form id="formRegistro">
+    <label>N° de orden:</label><br>
+    <input type="text" id="nro_orden" name="nro_orden" required><br><br>
 
-      <button type="submit">Registrar</button>
-    </form>
+    <label>Cantidad:</label><br>
+    <input type="number" id="cantidad_votos" name="cantidad_votos" required><br><br>
 
-    <p id="mensaje" class="mensaje">✅ Registro exitoso</p>
+    <button type="submit">Registrar</button>
+  </form>
 
-    <form action="/logout" method="POST">
-      <button type="submit" class="logout-btn">Cerrar sesión</button>
-    </form>
-  </div>
+  <p id="mensaje" style="font-weight: bold; margin-top: 10px;"></p>
+
+  <h3>📋 Registros cargados</h3>
+  <table id="tablaRegistros">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>N° Orden</th>
+        <th>Cantidad</th>
+        <th>Fecha</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <hr>
+
+  <form action="/logout" method="POST">
+    <button type="submit" style="background:red; color:white;">Cerrar sesión</button>
+  </form>
 
   <script>
-    const form = document.getElementById("registroForm");
-    const mensaje = document.getElementById("mensaje");
+    async function cargarRegistros() {
+      try {
+        const res = await fetch('/registros');
+        const data = await res.json();
 
-    form.addEventListener("submit", async (e) => {
+        if (data.success) {
+          const tbody = document.querySelector('#tablaRegistros tbody');
+          tbody.innerHTML = '';
+
+          data.registros.forEach(r => {
+            const fila = document.createElement('tr');
+            fila.innerHTML = `
+              <td>${r.id}</td>
+              <td>${r.nro_orden}</td>
+              <td>${r.cantidad_votos}</td>
+              <td>${new Date(r.fecha_registro).toLocaleString()}</td>
+            `;
+            tbody.appendChild(fila);
+          });
+        }
+      } catch (error) {
+        console.error('Error al cargar registros:', error);
+      }
+    }
+
+    document.getElementById("formRegistro").addEventListener("submit", async (e) => {
       e.preventDefault();
 
-      const datos = new FormData(form);
-      const payload = {
-        nro_orden: datos.get("nro_orden"),
-        cantidad_votos: datos.get("cantidad_votos")
-      };
+      const nro_orden = document.getElementById("nro_orden").value;
+      const cantidad_votos = document.getElementById("cantidad_votos").value;
+      const mensaje = document.getElementById("mensaje");
 
       try {
         const res = await fetch("/registrar", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
+          body: JSON.stringify({ nro_orden, cantidad_votos })
         });
 
-        if (res.ok) {
-          mensaje.style.display = "block";
-          mensaje.textContent = "✅ Registro exitoso
+        const data = await res.json();
+
+        if (data.success) {
+          mensaje.style.color = "green";
+          mensaje.textContent = data.message || "✅ Registro exitoso";
+          e.target.reset();
+          cargarRegistros(); // 🔄 actualiza la tabla en vivo
+        } else {
+          mensaje.style.color = "red";
+          mensaje.textContent = data.message || "❌ Error al registrar";
+        }
+
+        setTimeout(() => mensaje.textContent = "", 3000);
+      } catch (err) {
+        console.error(err);
+        mensaje.style.color = "red";
+        mensaje.textContent = "⚠️ Error al conectar con el servidor.";
+      }
+    });
+
+    // Cargar registros apenas se entra al dashboard
+    cargarRegistros();
+  </script>
+
+</body>
+</html>

@@ -1,187 +1,185 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Dashboard</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Registro de Votos</title>
   <style>
     body {
-      font-family: sans-serif;
-      background-color: #f2f2f2;
+      font-family: Arial, sans-serif;
+      background-color: #f3f4f6;
       margin: 0;
       padding: 0;
-    }
-
-    /* Barra superior fija */
-    .navbar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      background-color: #333;
-      color: white;
       display: flex;
-      justify-content: space-between;
+      flex-direction: column;
       align-items: center;
-      padding: 0.5rem 1rem;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-      z-index: 1000;
+      min-height: 100vh;
     }
 
-    .navbar h2 {
-      margin: 0;
-      font-size: 1.2rem;
-    }
-
-    .navbar form button {
-      background: red;
-      color: white;
-      border: none;
-      padding: 0.5rem 1rem;
-      border-radius: 6px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    /* Contenedor principal, dejando espacio por la navbar */
-    .container {
-      margin-top: 60px; /* altura de la navbar */
-      padding: 1rem;
-    }
-
-    /* Formulario */
-    form {
-      background: white;
-      padding: 1rem;
-      border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      margin-bottom: 1rem;
-    }
-
-    label, input, button {
-      display: block;
+    header {
       width: 100%;
-      margin-bottom: 0.5rem;
+      background: #2563eb;
+      color: white;
+      text-align: center;
+      padding: 1rem;
+      font-size: 1.3rem;
+      font-weight: bold;
+    }
+
+    .container {
+      width: 95%;
+      max-width: 500px;
+      background: white;
+      margin-top: 1rem;
+      padding: 1rem;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
 
     input {
-      padding: 0.5rem;
-      border-radius: 6px;
+      padding: 0.8rem;
       border: 1px solid #ccc;
-      box-sizing: border-box;
+      border-radius: 8px;
+      font-size: 1rem;
     }
 
     button {
-      background: #4CAF50;
+      background: #2563eb;
       color: white;
       border: none;
-      padding: 0.7rem;
-      border-radius: 6px;
+      padding: 0.8rem;
+      border-radius: 8px;
+      font-size: 1rem;
       cursor: pointer;
       font-weight: bold;
     }
 
     button:hover {
-      background: #45a049;
+      background: #1d4ed8;
     }
 
-    .total, .ultimos {
-      background: white;
-      padding: 1rem;
+    .total {
+      background: #e0f2fe;
       border-radius: 8px;
-      margin-bottom: 1rem;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      padding: 1rem;
+      text-align: center;
+      font-size: 1.2rem;
+      margin-top: 1rem;
+      font-weight: bold;
+      color: #1e3a8a;
+    }
+
+    .lista {
+      margin-top: 1.5rem;
+      background: #f9fafb;
+      border-radius: 8px;
+      padding: 0.5rem;
+    }
+
+    .registro {
+      background: #f1f5f9;
+      margin: 0.3rem 0;
+      padding: 0.7rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+    }
+
+    .registro strong {
+      color: #1e40af;
     }
 
     @media (max-width: 480px) {
-      .navbar h2 {
-        font-size: 1rem;
-      }
-      button {
-        padding: 0.5rem;
-      }
+      header { font-size: 1.1rem; }
+      input, button { font-size: 0.9rem; }
     }
   </style>
 </head>
 <body>
-
-  <!-- Navbar fija -->
-  <div class="navbar">
-    <h2>Dashboard - <%= usuario %></h2>
-    <form action="/logout" method="POST">
-      <button type="submit">Cerrar sesión</button>
-    </form>
-  </div>
+  <header>
+    Escuela <%= nro_escuela %> | Mesa <%= nro_mesa %>
+  </header>
 
   <div class="container">
-    <!-- Formulario para registrar votos -->
-    <form id="formRegistro">
-      <label>N° de orden:</label>
-      <input type="text" name="nro_orden" required>
-
-      <label>Cantidad de votos:</label>
-      <input type="number" name="cantidad_votos" required>
-
+    <form id="registroForm">
+      <input type="number" id="nro_orden" placeholder="N° de orden" required />
+      <input type="number" id="cantidad_votos" placeholder="Cantidad de votos" required />
       <button type="submit">Registrar</button>
     </form>
 
-    <!-- Total acumulado -->
     <div class="total">
-      <strong>Total acumulado:</strong> <span id="total"><%= total || 0 %></span>
+      Total acumulado: <span id="total"><%= total || 0 %></span>
     </div>
 
-    <!-- Últimos registros -->
-    <div class="ultimos">
-      <strong>Últimos registros:</strong>
-      <ul id="ultimos"></ul>
+    <div class="lista">
+      <h3>Últimos 5 registros</h3>
+      <div id="ultimos"></div>
     </div>
   </div>
 
   <script>
-    // Función para registrar votos vía AJAX y actualizar total y últimos registros
-    const form = document.getElementById('formRegistro');
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const data = {
-        nro_orden: form.nro_orden.value,
-        cantidad_votos: form.cantidad_votos.value
-      };
-      const res = await fetch('/registrar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+    const form = document.getElementById("registroForm");
+    const totalEl = document.getElementById("total");
+    const ultimosEl = document.getElementById("ultimos");
+
+    // 🔹 Cargar los últimos registros
+    async function cargarUltimos() {
+      const res = await fetch("/ultimos");
+      const data = await res.json();
+      ultimosEl.innerHTML = "";
+
+      if (data.length === 0) {
+        ultimosEl.innerHTML = "<p>No hay registros aún.</p>";
+        return;
+      }
+
+      data.forEach(reg => {
+        const div = document.createElement("div");
+        div.className = "registro";
+        div.innerHTML = `
+          <strong>Orden:</strong> ${reg.nro_orden} <br>
+          <strong>Cant. votos:</strong> ${reg.cantidad_votos} <br>
+          <strong>Fecha:</strong> ${new Date(reg.fecha_registro).toLocaleString("es-AR")}
+        `;
+        ultimosEl.appendChild(div);
       });
-      const result = await res.json();
-      if(result.success){
-        alert(result.success);
+    }
+
+    // 🔹 Cargar total
+    async function cargarTotal() {
+      const res = await fetch("/total");
+      const data = await res.json();
+      totalEl.textContent = data.total;
+    }
+
+    // 🔹 Enviar registro
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const nro_orden = document.getElementById("nro_orden").value;
+      const cantidad_votos = document.getElementById("cantidad_votos").value;
+
+      const res = await fetch("/registrar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nro_orden, cantidad_votos }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        await cargarTotal();
+        await cargarUltimos();
         form.reset();
-        cargarTotal();
-        cargarUltimos();
       } else {
-        alert(result.error || 'Error al registrar.');
+        alert(data.error || "Error al registrar");
       }
     });
 
-    async function cargarTotal() {
-      const res = await fetch('/total');
-      const data = await res.json();
-      document.getElementById('total').textContent = data.total || 0;
-    }
-
-    async function cargarUltimos() {
-      const res = await fetch('/ultimos');
-      const registros = await res.json();
-      const ul = document.getElementById('ultimos');
-      ul.innerHTML = '';
-      registros.forEach(r => {
-        const li = document.createElement('li');
-        li.textContent = `${r.nro_orden} → ${r.cantidad_votos} votos (${new Date(r.fecha_registro).toLocaleString()})`;
-        ul.appendChild(li);
-      });
-    }
-
-    // Cargar datos al iniciar
-    cargarTotal();
+    // 🔹 Cargar al iniciar
     cargarUltimos();
   </script>
 </body>

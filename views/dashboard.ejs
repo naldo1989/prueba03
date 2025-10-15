@@ -3,184 +3,154 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Registro de votos</title>
+  <title>Dashboard - Registro de Votos</title>
   <style>
     body {
-      background-color: #f3f3f3;
       font-family: Arial, sans-serif;
+      background: #f3f4f6;
       margin: 0;
-      padding: 20px;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #2563eb;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+      width: 100%;
+      font-size: 1.3rem;
+      font-weight: bold;
     }
 
     .container {
-      max-width: 400px;
-      margin: auto;
+      width: 95%;
+      max-width: 600px;
       background: white;
-      padding: 20px;
+      margin-top: 1rem;
+      padding: 1rem;
       border-radius: 12px;
-      box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
 
-    h2 {
-      text-align: center;
-      color: #333;
-    }
-
-    label {
-      font-weight: bold;
-      display: block;
-      margin-top: 10px;
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
 
     input {
-      width: 100%;
-      padding: 10px;
-      margin-top: 5px;
-      border-radius: 8px;
+      padding: 0.8rem;
       border: 1px solid #ccc;
-      font-size: 1em;
+      border-radius: 8px;
+      font-size: 1rem;
     }
 
     button {
-      width: 100%;
-      margin-top: 15px;
-      background-color: #007bff;
+      background: #2563eb;
       color: white;
       border: none;
-      padding: 10px;
+      padding: 0.8rem;
       border-radius: 8px;
-      font-size: 1.1em;
+      font-size: 1rem;
       cursor: pointer;
+      font-weight: bold;
     }
 
     button:hover {
-      background-color: #0056b3;
-    }
-
-    .logout {
-      background-color: #d9534f;
-    }
-
-    .logout:hover {
-      background-color: #c9302c;
-    }
-
-    .info {
-      margin: 10px 0;
-      font-size: 0.9em;
-      color: #555;
+      background: #1d4ed8;
     }
 
     .total {
-      text-align: center;
-      font-weight: bold;
-      margin-top: 20px;
-      font-size: 1.2em;
-      background: #e8f4ff;
-      padding: 10px;
+      background: #e0f2fe;
       border-radius: 8px;
+      padding: 0.8rem;
+      text-align: center;
+      font-size: 1.2rem;
+      margin-top: 1rem;
+      font-weight: bold;
+      color: #1e40af;
     }
 
-    #mensaje {
-      text-align: center;
-      margin-top: 10px;
-      font-weight: bold;
+    .lista {
+      margin-top: 1rem;
+      background: #f9fafb;
+      border-radius: 8px;
+      padding: 0.5rem;
+    }
+
+    .registro {
+      background: #f1f5f9;
+      margin: 0.3rem 0;
+      padding: 0.5rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+    }
+
+    .registro span {
+      display: block;
     }
 
     @media (max-width: 480px) {
-      .container {
-        padding: 15px;
-        margin: 10px;
-      }
-      h2 {
-        font-size: 1.3em;
-      }
+      header { font-size: 1.1rem; }
+      button, input { font-size: 0.9rem; }
     }
   </style>
 </head>
 <body>
+  <header>Registro de Votos</header>
+
   <div class="container">
-    <h2>Registro de votos</h2>
-
-    <div class="info">
-      <p><strong>Usuario:</strong> <%= usuario %></p>
-      <p><strong>Escuela:</strong> <%= nro_escuela %></p>
-      <p><strong>Mesa:</strong> <%= nro_mesa %></p>
-    </div>
-
-    <form id="formRegistro">
-      <label>N° de orden:</label>
-      <input type="text" name="nro_orden" id="nro_orden" required>
-
-      <label>Cantidad de votos:</label>
-      <input type="number" name="cantidad_votos" id="cantidad_votos" required>
-
+    <form id="registroForm">
+      <input type="number" id="nro_orden" placeholder="N° de orden" required />
+      <input type="number" id="cantidad_votos" placeholder="Cantidad de votos" required />
       <button type="submit">Registrar</button>
     </form>
 
-    <p id="mensaje"></p>
-
     <div class="total">
-      Total acumulado: <span id="total">0</span>
+      Total acumulado: <span id="total"><%= total || 0 %></span>
     </div>
 
-    <form action="/logout" method="POST">
-      <button type="submit" class="logout">Cerrar sesión</button>
-    </form>
+    <div class="lista">
+      <h3>Últimos 5 registros</h3>
+      <% if (ultimos && ultimos.length > 0) { %>
+        <% ultimos.forEach(reg => { %>
+          <div class="registro">
+            <span><strong>Orden:</strong> <%= reg.nro_orden %></span>
+            <span><strong>Cant.:</strong> <%= reg.cantidad_votos %></span>
+            <span><strong>Fecha:</strong> <%= new Date(reg.fecha).toLocaleString("es-AR") %></span>
+          </div>
+        <% }) %>
+      <% } else { %>
+        <p>No hay registros aún.</p>
+      <% } %>
+    </div>
   </div>
 
   <script>
-    async function actualizarTotal() {
-      try {
-        const res = await fetch("/total");
-        const data = await res.json();
-        document.getElementById("total").textContent = data.total || 0;
-      } catch (err) {
-        console.error("Error al obtener total:", err);
-      }
-    }
-
-    document.getElementById("formRegistro").addEventListener("submit", async (e) => {
+    document.getElementById("registroForm").addEventListener("submit", async (e) => {
       e.preventDefault();
+      const nro_orden = document.getElementById("nro_orden").value;
+      const cantidad_votos = document.getElementById("cantidad_votos").value;
 
-      const nro_orden = document.getElementById("nro_orden").value.trim();
-      const cantidad_votos = document.getElementById("cantidad_votos").value.trim();
-      const mensaje = document.getElementById("mensaje");
+      const res = await fetch("/registrar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nro_orden, cantidad_votos }),
+      });
 
-      if (!nro_orden || !cantidad_votos) {
-        mensaje.style.color = "red";
-        mensaje.textContent = "⚠️ Completá todos los campos.";
-        return;
-      }
+      const data = await res.json();
 
-      try {
-        const res = await fetch("/registrar", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ nro_orden, cantidad_votos })
-        });
-
-        const data = await res.json();
-
-        if (data.success) {
-          mensaje.style.color = "green";
-          mensaje.textContent = data.success;
-          document.getElementById("formRegistro").reset();
-          actualizarTotal();
-        } else {
-          mensaje.style.color = "red";
-          mensaje.textContent = data.error || "Error al registrar.";
-        }
-
-      } catch (err) {
-        console.error("Error al enviar registro:", err);
-        mensaje.style.color = "red";
-        mensaje.textContent = "Error de conexión.";
+      if (data.success) {
+        document.getElementById("total").textContent = data.total;
+        location.reload(); // recargar para actualizar lista
+      } else {
+        alert("Error al registrar voto");
       }
     });
-
-    // Cargar el total al entrar
-    actualizarTotal();
   </script>
 </body>
 </html>

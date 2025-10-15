@@ -125,20 +125,21 @@ app.get("/dashboard", (req, res) => {
 // Registrar nuevo voto
 app.post('/registrar', async (req, res) => {
   if (!req.session.usuario) {
-    return res.status(401).json({ success: false, message: "Sesión no válida" });
+    return res.status(401).json({ error: 'Sesión expirada. Volvé a iniciar sesión.' });
   }
 
   const { nro_orden, cantidad_votos } = req.body;
   const usuario_id = req.session.usuario.id;
 
   try {
+    // obtener la última sesión activa del usuario
     const sesion = await pool.query(
       'SELECT id FROM sesiones_usuario WHERE usuario_id = $1 ORDER BY fecha_inicio DESC LIMIT 1',
       [usuario_id]
     );
 
     if (sesion.rows.length === 0) {
-      return res.json({ success: false, message: "No hay sesión activa para este usuario." });
+      return res.json({ error: 'No hay sesión activa para este usuario.' });
     }
 
     const sesion_id = sesion.rows[0].id;
@@ -148,12 +149,15 @@ app.post('/registrar', async (req, res) => {
       [sesion_id, nro_orden, cantidad_votos]
     );
 
-    res.json({ success: true, message: "✅ Registro exitoso" });
+    // 👇 ESTE ES EL CAMBIO CLAVE:
+    res.json({ success: '✅ Registro exitoso.' });
+
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, message: "Error al registrar el voto." });
+    res.json({ error: 'Error al registrar el voto.' });
   }
 });
+
 
 // Obtener los últimos registros del usuario
 app.get('/ultimos-registros', async (req, res) => {

@@ -1,211 +1,198 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <title>Registro de votos</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard</title>
   <style>
     body {
-      background-color: #f0f0f0;
-      font-family: Arial, sans-serif;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #1e3c72, #2a5298);
+      color: white;
+      margin: 0;
+      padding-top: 70px; /* espacio para el encabezado fijo */
+      text-align: center;
+    }
+
+    /* Encabezado fijo */
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background-color: #153b76;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 15px;
+      color: #fff;
+      font-size: 1em;
+      font-weight: bold;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      z-index: 1000;
+    }
+
+    header .user {
+      font-size: 0.95em;
+      text-align: left;
+    }
+
+    header form {
+      margin: 0;
+    }
+
+    header button {
+      background-color: #d9534f;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 8px;
+      color: white;
+      font-weight: bold;
+      font-size: 0.9em;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    header button:hover {
+      background-color: #c9302c;
+      transform: scale(1.05);
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 15px;
       padding: 20px;
+      margin: 10px auto;
+      max-width: 400px;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
     }
 
     h2 {
-      color: #333;
-    }
-
-    .info {
-      background: #fff;
-      padding: 10px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-    }
-
-    form {
-      background: #fff;
-      padding: 15px;
-      border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      margin-bottom: 20px;
+      margin-bottom: 10px;
     }
 
     label {
       display: block;
+      text-align: left;
       margin-top: 10px;
+      font-weight: 500;
     }
 
     input {
       width: 100%;
-      padding: 6px;
-      margin-top: 4px;
-      border-radius: 4px;
-      border: 1px solid #ccc;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      margin-top: 5px;
+      font-size: 1em;
+      box-sizing: border-box;
+    }
+
+    input:focus {
+      outline: 2px solid #00eaff;
+      background: rgba(255,255,255,0.2);
+      color: #fff;
     }
 
     button {
       margin-top: 15px;
-      padding: 10px 15px;
-      background-color: #007bff;
-      color: white;
+      width: 100%;
+      padding: 12px;
       border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background-color: #0056b3;
-    }
-
-    .logout-btn {
-      background: red;
-    }
-
-    .msg {
+      border-radius: 10px;
+      font-size: 1em;
       font-weight: bold;
-      color: green;
+      color: white;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .btn-registrar {
+      background-color: #4CAF50;
+    }
+
+    .btn-registrar:hover {
+      background-color: #45a049;
+      transform: scale(1.03);
     }
 
     .total {
-      font-size: 1.2em;
-      margin-top: 10px;
-      background: #e8f5e9;
-      padding: 10px;
-      border-radius: 6px;
-      display: inline-block;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
       margin-top: 15px;
-      background: #fff;
-      border-radius: 8px;
-      overflow: hidden;
+      font-weight: bold;
+      font-size: 1.2em;
+      color: #a6ff96;
     }
 
-    th, td {
-      padding: 10px;
-      text-align: center;
-      border-bottom: 1px solid #ccc;
+    #mensaje {
+      margin-top: 10px;
+      font-weight: bold;
+      min-height: 20px;
     }
 
-    th {
-      background: #007bff;
-      color: white;
-    }
-
-    tr:nth-child(even) {
-      background: #f9f9f9;
+    /* Adaptación móvil */
+    @media (max-width: 480px) {
+      h2 { font-size: 1.2em; }
+      header { font-size: 0.9em; padding: 10px; }
+      input, button { font-size: 1em; }
+      .card { padding: 15px; margin: 5px; }
     }
   </style>
 </head>
-
 <body>
-  <h2>Registro de Votos</h2>
+  <header>
+    <div class="user">
+      <div><%= usuario %></div>
+      <small>Escuela <%= nro_escuela %> • Mesa <%= nro_mesa %></small>
+    </div>
+    <form action="/logout" method="POST">
+      <button type="submit">Salir</button>
+    </form>
+  </header>
 
-  <div class="info">
-    <p><strong>Usuario:</strong> <%= usuario %></p>
-    <p><strong>Escuela:</strong> <%= nro_escuela %></p>
-    <p><strong>Mesa:</strong> <%= nro_mesa %></p>
+  <div class="card">
+    <h2>Registro de Votos</h2>
+
+    <form id="formRegistro" action="/registrar" method="POST">
+      <label>N° de orden:</label>
+      <input type="text" name="nro_orden" required>
+
+      <label>Cantidad:</label>
+      <input type="number" name="cantidad_votos" required>
+
+      <button type="submit" class="btn-registrar">Registrar</button>
+    </form>
+
+    <p id="mensaje"></p>
+
+    <div class="total">
+      Total acumulado: <span id="total"><%= total || 0 %></span>
+    </div>
   </div>
-
-  <form id="formRegistro">
-    <label>N° de orden:</label>
-    <input type="text" name="nro_orden" required>
-
-    <label>Cantidad de votos:</label>
-    <input type="number" name="cantidad_votos" required>
-
-    <button type="submit">Registrar</button>
-  </form>
-
-  <p id="mensaje" class="msg"></p>
-
-  <div>
-    <h3>Total acumulado</h3>
-    <p id="total" class="total">Cargando...</p>
-  </div>
-
-  <div>
-    <h3>Últimos registros</h3>
-    <table>
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>N° Orden</th>
-          <th>Votos</th>
-          <th>Fecha</th>
-        </tr>
-      </thead>
-      <tbody id="tablaRegistros">
-        <tr><td colspan="4">Cargando...</td></tr>
-      </tbody>
-    </table>
-  </div>
-
-  <form action="/logout" method="POST">
-    <button class="logout-btn" type="submit">Cerrar sesión</button>
-  </form>
 
   <script>
-    // Registrar voto sin recargar
-    document.getElementById("formRegistro").addEventListener("submit", async (e) => {
+    document.getElementById('formRegistro').addEventListener('submit', async (e) => {
       e.preventDefault();
+      const form = e.target;
+      const data = new FormData(form);
 
-      const datos = {
-        nro_orden: e.target.nro_orden.value,
-        cantidad_votos: e.target.cantidad_votos.value,
-      };
-
-      const res = await fetch("/registrar", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(datos),
+      const res = await fetch('/registrar', {
+        method: 'POST',
+        body: data
       });
 
-      const data = await res.json();
+      const result = await res.json();
 
-      document.getElementById("mensaje").innerText = data.success || data.error || "";
-      e.target.reset();
-      actualizarTotal();
-      actualizarTabla();
-    });
-
-    // Obtener total acumulado
-    async function actualizarTotal() {
-      const res = await fetch("/total");
-      const data = await res.json();
-      document.getElementById("total").innerText = data.total + " votos";
-    }
-
-    // Obtener últimos registros
-    async function actualizarTabla() {
-      const res = await fetch("/ultimos");
-      const data = await res.json();
-
-      const tbody = document.getElementById("tablaRegistros");
-      tbody.innerHTML = "";
-
-      if (data.length === 0) {
-        tbody.innerHTML = "<tr><td colspan='4'>Sin registros</td></tr>";
-        return;
+      if (result.success) {
+        document.getElementById('mensaje').textContent = "✅ Registro exitoso";
+        document.getElementById('total').textContent = result.total;
+        form.reset();
+      } else {
+        document.getElementById('mensaje').textContent = "❌ Error al registrar";
       }
 
-      data.forEach((r, i) => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${i + 1}</td>
-          <td>${r.nro_orden}</td>
-          <td>${r.cantidad_votos}</td>
-          <td>${new Date(r.fecha_registro).toLocaleString()}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-
-    // Cargar total y registros al iniciar
-    actualizarTotal();
-    actualizarTabla();
+      setTimeout(() => document.getElementById('mensaje').textContent = "", 3000);
+    });
   </script>
 </body>
 </html>

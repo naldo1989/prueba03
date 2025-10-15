@@ -121,6 +121,13 @@
     tr:hover {
       background: #f9f9f9;
     }
+
+    .total {
+      margin-top: 8px;
+      font-weight: bold;
+      color: #222;
+      text-align: right;
+    }
   </style>
 </head>
 <body>
@@ -155,10 +162,9 @@
             <th>Hora</th>
           </tr>
         </thead>
-        <tbody>
-          <!-- Se llena dinámicamente -->
-        </tbody>
+        <tbody></tbody>
       </table>
+      <p id="totalVotos" class="total"></p>
     </div>
 
     <form action="/logout" method="POST">
@@ -170,12 +176,15 @@
     const form = document.getElementById('registroForm');
     const mensaje = document.getElementById('mensajeExito');
     const tabla = document.querySelector('#tablaHistorial tbody');
+    const totalVotos = document.getElementById('totalVotos');
 
     async function cargarHistorial() {
       const res = await fetch('/ultimos-registros');
       const data = await res.json();
 
       tabla.innerHTML = '';
+      let total = 0;
+
       data.forEach(reg => {
         const fila = document.createElement('tr');
         fila.innerHTML = `
@@ -184,7 +193,10 @@
           <td>${new Date(reg.fecha_registro).toLocaleTimeString()}</td>
         `;
         tabla.appendChild(fila);
+        total += parseInt(reg.cantidad_votos);
       });
+
+      totalVotos.textContent = `🔢 Total acumulado: ${total} votos`;
     }
 
     form.addEventListener('submit', async (e) => {
@@ -215,7 +227,7 @@
       }
     });
 
-    // Cargar historial inicial al abrir el dashboard
+    // Cargar historial inicial
     cargarHistorial();
   </script>
 </body>

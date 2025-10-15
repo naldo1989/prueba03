@@ -105,7 +105,7 @@ app.post("/login", async (req, res) => {
 
 /////Dashboard **************/
 
-app.get("/dashboard", (req, res) => {
+app.get("/dashboard", async (req, res) => {
   if (!req.session.usuario) {
     return res.redirect("/login");
   }
@@ -113,13 +113,36 @@ app.get("/dashboard", (req, res) => {
   const { nombre, apellido } = req.session.usuario;
   const { nro_escuela, nro_mesa } = req.session;
 
-  // Renderizamos una vista EJS con un formulario para registrar votos
-  res.render("dashboard", {
-    usuario: `${nombre} ${apellido}`,
-    nro_escuela,
-    nro_mesa
-  });
+  try {
+    // Calculamos el total acumulado para esa escuela y mesa
+    const result = await pool.query(
+      `SELECT COALESCE(SUM(r.cantidad_votos), 0) AS total
+       FROM registros r
+       JOIN sesiones_usuario s ON r.sesion_id = s.id
+       WHERE s.nro_escuela = $1 AND s.nro_mesa = $2`,
+      [nro_escuela, nro_mesa]
+    );
+
+    const total = result.rows[0].total || 0;
+
+    // Renderizamos la vista con el total incluido
+    res.render("dashboard", {
+      usuario: `${nombre} ${apellido}`,
+      nro_escuela,
+      nro_mesa,
+      total,
+    });
+  } catch (error) {
+    console.error("Error al obtener total:", error);
+    res.render("dashboard", {
+      usuario: `${nombre} ${apellido}`,
+      nro_escuela,
+      nro_mesa,
+      total: 0,
+    });
+  }
 });
+
 
 
 // Registrar nuevo voto

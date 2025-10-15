@@ -181,6 +181,50 @@ app.get('/ultimos-registros', async (req, res) => {
   }
 });
 
+// Total acumulado de esa escuela y mesa
+app.get("/total", async (req, res) => {
+  if (!req.session.usuario) return res.json({ total: 0 });
+
+  const { nro_escuela, nro_mesa } = req.session;
+
+  try {
+    const result = await pool.query(
+      `SELECT COALESCE(SUM(r.cantidad_votos), 0) AS total
+       FROM registros r
+       JOIN sesiones_usuario s ON r.sesion_id = s.id
+       WHERE s.nro_escuela = $1 AND s.nro_mesa = $2`,
+      [nro_escuela, nro_mesa]
+    );
+    res.json({ total: result.rows[0].total });
+  } catch (error) {
+    console.error("Error al calcular total:", error);
+    res.json({ total: 0 });
+  }
+});
+
+// Últimos 5 registros de esa escuela y mesa
+app.get("/ultimos", async (req, res) => {
+  if (!req.session.usuario) return res.json([]);
+
+  const { nro_escuela, nro_mesa } = req.session;
+
+  try {
+    const result = await pool.query(
+      `SELECT r.nro_orden, r.cantidad_votos, r.fecha_registro
+       FROM registros r
+       JOIN sesiones_usuario s ON r.sesion_id = s.id
+       WHERE s.nro_escuela = $1 AND s.nro_mesa = $2
+       ORDER BY r.fecha_registro DESC
+       LIMIT 5`,
+      [nro_escuela, nro_mesa]
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Error al obtener registros:", error);
+    res.json([]);
+  }
+});
+
 
 
 // ----------- LOGOUT -----------

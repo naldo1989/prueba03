@@ -64,4 +64,92 @@
     }
 
     button {
-      margin
+      margin-top: 20px;
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 8px;
+      width: 100%;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background: #5563c1;
+    }
+
+    .logout-btn {
+      background: #d9534f;
+      margin-top: 10px;
+    }
+
+    .mensaje {
+      margin-top: 10px;
+      font-weight: bold;
+      color: #28a745;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Registro de votos</h2>
+
+    <div class="info">
+      <p><strong>Usuario:</strong> <%= usuario %></p>
+      <p><strong>Escuela:</strong> <%= nro_escuela %></p>
+      <p><strong>Mesa:</strong> <%= nro_mesa %></p>
+    </div>
+
+    <form id="registroForm">
+      <label for="nro_orden">N° de orden:</label>
+      <input type="text" id="nro_orden" name="nro_orden" required>
+
+      <label for="cantidad_votos">Cantidad:</label>
+      <input type="number" id="cantidad_votos" name="cantidad_votos" required>
+
+      <button type="submit">Registrar</button>
+    </form>
+
+    <p id="mensajeExito" class="mensaje">✅ Registro exitoso</p>
+
+    <form action="/logout" method="POST">
+      <button type="submit" class="logout-btn">Cerrar sesión</button>
+    </form>
+  </div>
+
+  <script>
+    const form = document.getElementById('registroForm');
+    const mensaje = document.getElementById('mensajeExito');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const data = {
+        nro_orden: form.nro_orden.value,
+        cantidad_votos: form.cantidad_votos.value
+      };
+
+      const res = await fetch('/registrar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      if (res.ok) {
+        mensaje.style.display = 'block';
+        mensaje.textContent = '✅ Registro exitoso';
+        form.reset();
+        setTimeout(() => {
+          mensaje.style.display = 'none';
+        }, 2000);
+      } else {
+        mensaje.style.display = 'block';
+        mensaje.textContent = '❌ Error al registrar';
+        mensaje.style.color = 'red';
+      }
+    });
+  </script>
+</body>
+</html>

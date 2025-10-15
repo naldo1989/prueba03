@@ -2,51 +2,131 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Login</title>
+  <title>Ingreso al sistema</title>
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      font-family: 'Segoe UI', sans-serif;
+      height: 100vh;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #333;
+    }
+
+    .login-container {
+      background: #fff;
+      padding: 30px 40px;
+      border-radius: 16px;
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+      width: 100%;
+      max-width: 380px;
+      text-align: center;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      color: #444;
+    }
+
+    label {
+      display: block;
+      text-align: left;
+      margin-top: 12px;
+      font-weight: 600;
+      color: #555;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 15px;
+      transition: border-color 0.3s;
+    }
+
+    input:focus {
+      border-color: #667eea;
+      outline: none;
+    }
+
+    button {
+      margin-top: 20px;
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 8px;
+      width: 100%;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background: #5563c1;
+    }
+
+    .mensaje {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    .mensaje.error {
+      color: #d9534f;
+    }
+
+    .mensaje.ok {
+      color: #28a745;
+    }
+
+    p {
+      margin-top: 15px;
+    }
+
+    a {
+      color: #667eea;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
 </head>
-<body style="background-color: gray;">
-  <h2>Ingreso al sistema</h2>
-  <form id="formLogin">
-    <label>DNI:</label><br>
-    <input type="text" id="dni" name="dni" required><br><br>
+<body>
+  <div class="login-container">
+    <h2>Ingreso al sistema</h2>
 
-    <label>Contraseña:</label><br>
-    <input type="password" id="password" name="password" required><br><br>
+    <% if (typeof error !== 'undefined') { %>
+      <p class="mensaje error"><%= error %></p>
+    <% } %>
 
-    <label>N° de E:</label><br>
-    <input type="text" id="nro_escuela" name="nro_escuela" required><br><br>
+    <% if (typeof mensaje !== 'undefined') { %>
+      <p class="mensaje ok"><%= mensaje %></p>
+    <% } %>
 
-    <label>N° de M:</label><br>
-    <input type="text" id="nro_mesa" name="nro_mesa" required><br><br>
+    <form action="/login" method="POST">
+      <label for="dni">DNI:</label>
+      <input type="text" id="dni" name="dni" required>
 
-    <button type="submit">Ingresar</button>
-  </form>
-<p>¿No tienes cuenta? <a href="/registro">Registrate aquí</a></p>
+      <label for="password">Contraseña:</label>
+      <input type="password" id="password" name="password" required>
 
-  <script>
-    document.getElementById("formLogin").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const datos = {
-        dni: document.getElementById("dni").value,
-        password: document.getElementById("password").value,
-        nro_escuela: document.getElementById("nro_escuela").value,
-        nro_mesa: document.getElementById("nro_mesa").value
-      };
+      <label for="nro_escuela">N° de Escuela:</label>
+      <input type="text" id="nro_escuela" name="nro_escuela" required>
 
-      const res = await fetch("/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(datos)
-      });
-      const data = await res.json();
+      <label for="nro_mesa">N° de Mesa:</label>
+      <input type="text" id="nro_mesa" name="nro_mesa" required>
 
-      if (data.success) {
-        alert("Login exitoso");
-        window.location.href = "/"; // o a donde quieras redirigir
-      } else {
-        alert(data.error || "Error al iniciar sesión");
-      }
-    });
-  </script>
+      <button type="submit">Ingresar</button>
+    </form>
+
+    <p>¿No tienes cuenta? <a href="/registro">Registrate aquí</a></p>
+  </div>
 </body>
 </html>

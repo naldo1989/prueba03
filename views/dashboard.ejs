@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard - Registro de Votos</title>
+  <title>Registro de Votos</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f3f4f6;
+      background-color: #f3f4f6;
       margin: 0;
       padding: 0;
       display: flex;
@@ -17,18 +17,18 @@
     }
 
     header {
+      width: 100%;
       background: #2563eb;
       color: white;
-      padding: 1rem;
       text-align: center;
-      width: 100%;
+      padding: 1rem;
       font-size: 1.3rem;
       font-weight: bold;
     }
 
     .container {
       width: 95%;
-      max-width: 600px;
+      max-width: 500px;
       background: white;
       margin-top: 1rem;
       padding: 1rem;
@@ -67,16 +67,16 @@
     .total {
       background: #e0f2fe;
       border-radius: 8px;
-      padding: 0.8rem;
+      padding: 1rem;
       text-align: center;
       font-size: 1.2rem;
       margin-top: 1rem;
       font-weight: bold;
-      color: #1e40af;
+      color: #1e3a8a;
     }
 
     .lista {
-      margin-top: 1rem;
+      margin-top: 1.5rem;
       background: #f9fafb;
       border-radius: 8px;
       padding: 0.5rem;
@@ -85,23 +85,25 @@
     .registro {
       background: #f1f5f9;
       margin: 0.3rem 0;
-      padding: 0.5rem;
+      padding: 0.7rem;
       border-radius: 8px;
       font-size: 0.9rem;
     }
 
-    .registro span {
-      display: block;
+    .registro strong {
+      color: #1e40af;
     }
 
     @media (max-width: 480px) {
       header { font-size: 1.1rem; }
-      button, input { font-size: 0.9rem; }
+      input, button { font-size: 0.9rem; }
     }
   </style>
 </head>
 <body>
-  <header>Registro de Votos</header>
+  <header>
+    Escuela <%= nro_escuela %> | Mesa <%= nro_mesa %>
+  </header>
 
   <div class="container">
     <form id="registroForm">
@@ -116,22 +118,47 @@
 
     <div class="lista">
       <h3>Últimos 5 registros</h3>
-      <% if (ultimos && ultimos.length > 0) { %>
-        <% ultimos.forEach(reg => { %>
-          <div class="registro">
-            <span><strong>Orden:</strong> <%= reg.nro_orden %></span>
-            <span><strong>Cant.:</strong> <%= reg.cantidad_votos %></span>
-            <span><strong>Fecha:</strong> <%= new Date(reg.fecha).toLocaleString("es-AR") %></span>
-          </div>
-        <% }) %>
-      <% } else { %>
-        <p>No hay registros aún.</p>
-      <% } %>
+      <div id="ultimos"></div>
     </div>
   </div>
 
   <script>
-    document.getElementById("registroForm").addEventListener("submit", async (e) => {
+    const form = document.getElementById("registroForm");
+    const totalEl = document.getElementById("total");
+    const ultimosEl = document.getElementById("ultimos");
+
+    // 🔹 Cargar los últimos registros
+    async function cargarUltimos() {
+      const res = await fetch("/ultimos");
+      const data = await res.json();
+      ultimosEl.innerHTML = "";
+
+      if (data.length === 0) {
+        ultimosEl.innerHTML = "<p>No hay registros aún.</p>";
+        return;
+      }
+
+      data.forEach(reg => {
+        const div = document.createElement("div");
+        div.className = "registro";
+        div.innerHTML = `
+          <strong>Orden:</strong> ${reg.nro_orden} <br>
+          <strong>Cant. votos:</strong> ${reg.cantidad_votos} <br>
+          <strong>Fecha:</strong> ${new Date(reg.fecha_registro).toLocaleString("es-AR")}
+        `;
+        ultimosEl.appendChild(div);
+      });
+    }
+
+    // 🔹 Cargar total
+    async function cargarTotal() {
+      const res = await fetch("/total");
+      const data = await res.json();
+      totalEl.textContent = data.total;
+    }
+
+    // 🔹 Enviar registro
+    form.addEventListener("submit", async (e) => {
       e.preventDefault();
       const nro_orden = document.getElementById("nro_orden").value;
       const cantidad_votos = document.getElementById("cantidad_votos").value;
@@ -143,14 +170,17 @@
       });
 
       const data = await res.json();
-
       if (data.success) {
-        document.getElementById("total").textContent = data.total;
-        location.reload(); // recargar para actualizar lista
+        await cargarTotal();
+        await cargarUltimos();
+        form.reset();
       } else {
-        alert("Error al registrar voto");
+        alert(data.error || "Error al registrar");
       }
     });
+
+    // 🔹 Cargar al iniciar
+    cargarUltimos();
   </script>
 </body>
 </html>

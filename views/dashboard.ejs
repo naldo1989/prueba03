@@ -21,7 +21,7 @@
       border-radius: 16px;
       box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
       width: 100%;
-      max-width: 500px;
+      max-width: 520px;
       text-align: center;
     }
 
@@ -91,6 +91,36 @@
       color: #28a745;
       display: none;
     }
+
+    .historial {
+      margin-top: 20px;
+      text-align: left;
+    }
+
+    .historial h3 {
+      margin-bottom: 8px;
+      color: #444;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    th, td {
+      padding: 6px;
+      border-bottom: 1px solid #ddd;
+    }
+
+    th {
+      background: #f0f0f0;
+      text-align: left;
+    }
+
+    tr:hover {
+      background: #f9f9f9;
+    }
   </style>
 </head>
 <body>
@@ -115,6 +145,22 @@
 
     <p id="mensajeExito" class="mensaje">✅ Registro exitoso</p>
 
+    <div class="historial">
+      <h3>🗳️ Últimos registros</h3>
+      <table id="tablaHistorial">
+        <thead>
+          <tr>
+            <th>Orden</th>
+            <th>Cantidad</th>
+            <th>Hora</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Se llena dinámicamente -->
+        </tbody>
+      </table>
+    </div>
+
     <form action="/logout" method="POST">
       <button type="submit" class="logout-btn">Cerrar sesión</button>
     </form>
@@ -123,6 +169,23 @@
   <script>
     const form = document.getElementById('registroForm');
     const mensaje = document.getElementById('mensajeExito');
+    const tabla = document.querySelector('#tablaHistorial tbody');
+
+    async function cargarHistorial() {
+      const res = await fetch('/ultimos-registros');
+      const data = await res.json();
+
+      tabla.innerHTML = '';
+      data.forEach(reg => {
+        const fila = document.createElement('tr');
+        fila.innerHTML = `
+          <td>${reg.nro_orden}</td>
+          <td>${reg.cantidad_votos}</td>
+          <td>${new Date(reg.fecha_registro).toLocaleTimeString()}</td>
+        `;
+        tabla.appendChild(fila);
+      });
+    }
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -141,6 +204,7 @@
         mensaje.style.display = 'block';
         mensaje.textContent = '✅ Registro exitoso';
         form.reset();
+        await cargarHistorial();
         setTimeout(() => {
           mensaje.style.display = 'none';
         }, 2000);
@@ -150,6 +214,9 @@
         mensaje.style.color = 'red';
       }
     });
+
+    // Cargar historial inicial al abrir el dashboard
+    cargarHistorial();
   </script>
 </body>
 </html>

@@ -1,198 +1,186 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Registro de votos</title>
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(135deg, #1e3c72, #2a5298);
-      color: white;
+      background-color: #f3f3f3;
+      font-family: Arial, sans-serif;
       margin: 0;
-      padding-top: 70px; /* espacio para el encabezado fijo */
-      text-align: center;
-    }
-
-    /* Encabezado fijo */
-    header {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      background-color: #153b76;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 15px;
-      color: #fff;
-      font-size: 1em;
-      font-weight: bold;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-      z-index: 1000;
-    }
-
-    header .user {
-      font-size: 0.95em;
-      text-align: left;
-    }
-
-    header form {
-      margin: 0;
-    }
-
-    header button {
-      background-color: #d9534f;
-      border: none;
-      padding: 8px 14px;
-      border-radius: 8px;
-      color: white;
-      font-weight: bold;
-      font-size: 0.9em;
-      cursor: pointer;
-      transition: 0.3s;
-    }
-
-    header button:hover {
-      background-color: #c9302c;
-      transform: scale(1.05);
-    }
-
-    .card {
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 15px;
       padding: 20px;
-      margin: 10px auto;
+    }
+
+    .container {
       max-width: 400px;
-      backdrop-filter: blur(8px);
-      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.2);
     }
 
     h2 {
-      margin-bottom: 10px;
+      text-align: center;
+      color: #333;
     }
 
     label {
+      font-weight: bold;
       display: block;
-      text-align: left;
       margin-top: 10px;
-      font-weight: 500;
     }
 
     input {
       width: 100%;
-      padding: 12px;
-      border: none;
-      border-radius: 10px;
+      padding: 10px;
       margin-top: 5px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
       font-size: 1em;
-      box-sizing: border-box;
-    }
-
-    input:focus {
-      outline: 2px solid #00eaff;
-      background: rgba(255,255,255,0.2);
-      color: #fff;
     }
 
     button {
-      margin-top: 15px;
       width: 100%;
-      padding: 12px;
-      border: none;
-      border-radius: 10px;
-      font-size: 1em;
-      font-weight: bold;
+      margin-top: 15px;
+      background-color: #007bff;
       color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 1.1em;
       cursor: pointer;
-      transition: 0.3s;
     }
 
-    .btn-registrar {
-      background-color: #4CAF50;
+    button:hover {
+      background-color: #0056b3;
     }
 
-    .btn-registrar:hover {
-      background-color: #45a049;
-      transform: scale(1.03);
+    .logout {
+      background-color: #d9534f;
+    }
+
+    .logout:hover {
+      background-color: #c9302c;
+    }
+
+    .info {
+      margin: 10px 0;
+      font-size: 0.9em;
+      color: #555;
     }
 
     .total {
-      margin-top: 15px;
+      text-align: center;
       font-weight: bold;
+      margin-top: 20px;
       font-size: 1.2em;
-      color: #a6ff96;
+      background: #e8f4ff;
+      padding: 10px;
+      border-radius: 8px;
     }
 
     #mensaje {
+      text-align: center;
       margin-top: 10px;
       font-weight: bold;
-      min-height: 20px;
     }
 
-    /* Adaptación móvil */
     @media (max-width: 480px) {
-      h2 { font-size: 1.2em; }
-      header { font-size: 0.9em; padding: 10px; }
-      input, button { font-size: 1em; }
-      .card { padding: 15px; margin: 5px; }
+      .container {
+        padding: 15px;
+        margin: 10px;
+      }
+      h2 {
+        font-size: 1.3em;
+      }
     }
   </style>
 </head>
 <body>
-  <header>
-    <div class="user">
-      <div><%= usuario %></div>
-      <small>Escuela <%= nro_escuela %> • Mesa <%= nro_mesa %></small>
+  <div class="container">
+    <h2>Registro de votos</h2>
+
+    <div class="info">
+      <p><strong>Usuario:</strong> <%= usuario %></p>
+      <p><strong>Escuela:</strong> <%= nro_escuela %></p>
+      <p><strong>Mesa:</strong> <%= nro_mesa %></p>
     </div>
-    <form action="/logout" method="POST">
-      <button type="submit">Salir</button>
-    </form>
-  </header>
 
-  <div class="card">
-    <h2>Registro de Votos</h2>
-
-    <form id="formRegistro" action="/registrar" method="POST">
+    <form id="formRegistro">
       <label>N° de orden:</label>
-      <input type="text" name="nro_orden" required>
+      <input type="text" name="nro_orden" id="nro_orden" required>
 
-      <label>Cantidad:</label>
-      <input type="number" name="cantidad_votos" required>
+      <label>Cantidad de votos:</label>
+      <input type="number" name="cantidad_votos" id="cantidad_votos" required>
 
-      <button type="submit" class="btn-registrar">Registrar</button>
+      <button type="submit">Registrar</button>
     </form>
 
     <p id="mensaje"></p>
 
     <div class="total">
-      Total acumulado: <span id="total"><%= total || 0 %></span>
+      Total acumulado: <span id="total">0</span>
     </div>
+
+    <form action="/logout" method="POST">
+      <button type="submit" class="logout">Cerrar sesión</button>
+    </form>
   </div>
 
   <script>
-    document.getElementById('formRegistro').addEventListener('submit', async (e) => {
+    async function actualizarTotal() {
+      try {
+        const res = await fetch("/total");
+        const data = await res.json();
+        document.getElementById("total").textContent = data.total || 0;
+      } catch (err) {
+        console.error("Error al obtener total:", err);
+      }
+    }
+
+    document.getElementById("formRegistro").addEventListener("submit", async (e) => {
       e.preventDefault();
-      const form = e.target;
-      const data = new FormData(form);
 
-      const res = await fetch('/registrar', {
-        method: 'POST',
-        body: data
-      });
+      const nro_orden = document.getElementById("nro_orden").value.trim();
+      const cantidad_votos = document.getElementById("cantidad_votos").value.trim();
+      const mensaje = document.getElementById("mensaje");
 
-      const result = await res.json();
-
-      if (result.success) {
-        document.getElementById('mensaje').textContent = "✅ Registro exitoso";
-        document.getElementById('total').textContent = result.total;
-        form.reset();
-      } else {
-        document.getElementById('mensaje').textContent = "❌ Error al registrar";
+      if (!nro_orden || !cantidad_votos) {
+        mensaje.style.color = "red";
+        mensaje.textContent = "⚠️ Completá todos los campos.";
+        return;
       }
 
-      setTimeout(() => document.getElementById('mensaje').textContent = "", 3000);
+      try {
+        const res = await fetch("/registrar", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nro_orden, cantidad_votos })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          mensaje.style.color = "green";
+          mensaje.textContent = data.success;
+          document.getElementById("formRegistro").reset();
+          actualizarTotal();
+        } else {
+          mensaje.style.color = "red";
+          mensaje.textContent = data.error || "Error al registrar.";
+        }
+
+      } catch (err) {
+        console.error("Error al enviar registro:", err);
+        mensaje.style.color = "red";
+        mensaje.textContent = "Error de conexión.";
+      }
     });
+
+    // Cargar el total al entrar
+    actualizarTotal();
   </script>
 </body>
 </html>

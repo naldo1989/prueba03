@@ -155,29 +155,29 @@ app.post('/registrar', async (req, res) => {
   }
 });
 
-
-//------- Muestra la Tabla con los Registros------
-app.get("/registros", async (req, res) => {
+// Obtener los últimos registros del usuario
+app.get('/ultimos-registros', async (req, res) => {
   if (!req.session.usuario) {
-    return res.status(401).json([]);
+    return res.status(401).json({ error: 'No autorizado' });
   }
 
-  const usuario_id = req.session.usuario.id;
-
   try {
+    const usuario_id = req.session.usuario.id;
+
     const result = await pool.query(
       `SELECT r.nro_orden, r.cantidad_votos, r.fecha_registro
        FROM registros r
        JOIN sesiones_usuario s ON r.sesion_id = s.id
        WHERE s.usuario_id = $1
-       ORDER BY r.fecha_registro DESC`,
+       ORDER BY r.fecha_registro DESC
+       LIMIT 5`,
       [usuario_id]
     );
 
     res.json(result.rows);
-  } catch (error) {
-    console.error("Error al obtener registros:", error);
-    res.status(500).json([]);
+  } catch (err) {
+    console.error('Error al obtener historial:', err);
+    res.status(500).json({ error: 'Error al obtener historial' });
   }
 });
 

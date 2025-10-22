@@ -1,6 +1,42 @@
 import { pool } from "./db.js";
 
 const initDB = async () => {
+  CREATE TABLE IF NOT EXISTS participaciones (
+  id SERIAL PRIMARY KEY,
+  nro_escuela VARCHAR(10) NOT NULL,
+  nro_mesa VARCHAR(10) NOT NULL,
+  total_votaron INT DEFAULT 0,
+  cerrado BOOLEAN DEFAULT false,
+  fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);    
+  try {
+      await pool.query(`
+      CREATE TABLE IF NOT EXISTS padrones (
+  id SERIAL PRIMARY KEY,
+  nro_escuela VARCHAR(10) NOT NULL,
+  nro_mesa VARCHAR(10) NOT NULL,
+  cantidad_votantes INT NOT NULL);
+    `);
+    console.log("✅ Tabla 'padrones' creada o ya existente.");
+    process.exit(0);
+  } catch (err) {
+    console.error("❌ Error creando tabla:", err);
+    process.exit(1);
+  }
+    try {
+      await pool.query(`
+      CREATE TABLE IF NOT EXISTS padrones (
+  id SERIAL PRIMARY KEY,
+  nro_escuela VARCHAR(10) NOT NULL,
+  nro_mesa VARCHAR(10) NOT NULL,
+  cantidad_votantes INT NOT NULL);
+    `);
+    console.log("✅ Tabla 'padrones' creada o ya existente.");
+    process.exit(0);
+  } catch (err) {
+    console.error("❌ Error creando tabla:", err);
+    process.exit(1);
+  }
   try {
       await pool.query(`
       CREATE TABLE IF NOT EXISTS usuarios (

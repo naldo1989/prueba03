@@ -77,8 +77,8 @@ app.post("/login", async (req, res) => {
     }
 
     await pool.query(
-      `INSERT INTO participaciones (nro_escuela, nro_mesa, total_votaron, cerrado)
-       VALUES ($1, $2, 0, false)
+      `INSERT INTO participaciones (nro_escuela, nro_mesa, total_votaron, cerrado, fecha_actualizacion)
+       VALUES ($1, $2, 0, false, NOW())
        ON CONFLICT (nro_escuela, nro_mesa) DO NOTHING`,
       [nro_escuela, nro_mesa]
     );

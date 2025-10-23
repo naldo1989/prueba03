@@ -252,8 +252,6 @@ app.get("/ultimos", async (req, res) => {
   }
 });
 
-
-
 // ----------- LOGOUT -----------
 app.post("/logout", (req, res) => {
   req.session.destroy((err) => {
@@ -265,6 +263,94 @@ app.post("/logout", (req, res) => {
     res.redirect("/login");
   });
 });
+
+// Ver o crear registro de participación
+app.get('/mesa', async (req, res) => {
+  const { nro_escuela, nro_mesa } = req.query;
+
+  try {
+    const padron = await pool.query(
+      'SELECT cantidad_votantes FROM padrones WHERE nro_escuela=$1 AND nro_mesa=$2',
+      [nro_escuela, nro_mesa]
+    );
+
+    if (padron.rows.length === 0)
+      return res.send('No existe el padrón de esa mesa.');
+
+    const cantidad_votantes = padron.rows[0].cantidad_votantes;
+
+    // Busca o crea participación
+    let result = await pool.query(
+      'SELECT * FROM participaciones WHERE nro_escuela=$1 AND nro_mesa=$2',
+      [nro_escuela, nro_mesa]
+    );
+
+    if (result.rows.length === 0) {
+      await pool.query(
+        'INSERT INTO participaciones (nro_escuela, nro_mesa) VALUES ($1,$2)',
+        [nro_escuela, nro_mesa]
+      );
+      result = await pool.query(
+        'SELECT * FROM participaciones WHERE nro_escuela=$1 AND nro_mesa=$2',
+        [nro_escuela, nro_mesa]
+      );
+    }
+
+    const mesa = result.rows[0];
+    const porcentaje = ((mesa.total_votaron / cantidad_votantes) * 100).toFixed(2);
+
+    res.render('mesa', {
+      nro_escuela,
+      nro_mesa,
+      cantidad_votantes,
+      total_votaron: mesa.total_votaron,
+      porcentaje,
+      cerrado: mesa.cerrado
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error al cargar la mesa');
+  }
+});
+
+// Actualizar cantidad de votos
+app.post('/mesa/actualizar', async (req, res) => {
+  const { nro_escuela, nro_mesa, total_votaron } = req.body;
+
+  try {
+    await pool.query(
+      `UPDATE participaciones 
+       SET total_votaron=$1, fecha_actualizacion=NOW()
+       WHERE nro_escuela=$2 AND nro_mesa=$3 AND cerrado=false`,
+      [total_votaron, nro_escuela, nro_mesa]
+    );
+
+    res.redirect(`/mesa?nro_escuela=${nro_escuela}&nro_mesa=${nro_mesa}`);
+  } catch (err) {
+    console.error(err);
+    res.send('Error al actualizar votos');
+  }
+});
+
+// Cerrar mesa
+app.post('/mesa/cerrar', async (req, res) => {
+  const { nro_escuela, nro_mesa } = req.body;
+
+  try {
+    await pool.query(
+      `UPDATE participaciones 
+       SET cerrado=true, fecha_actualizacion=NOW()
+       WHERE nro_escuela=$1 AND nro_mesa=$2`,
+      [nro_escuela, nro_mesa]
+    );
+    res.redirect(`/mesa?nro_escuela=${nro_escuela}&nro_mesa=${nro_mesa}`);
+  } catch (err) {
+    console.error(err);
+    res.send('Error al cerrar la mesa');
+  }
+});
+
 
 
 const PORT = process.env.PORT || 8080;

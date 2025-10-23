@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Registro de Votos</title>
+  <title>Control de Votación</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -64,6 +64,14 @@
       background: #1d4ed8;
     }
 
+    .status {
+      text-align: center;
+      margin-bottom: 1rem;
+      font-size: 1rem;
+      font-weight: bold;
+      color: #1e3a8a;
+    }
+
     .total {
       background: #e0f2fe;
       border-radius: 8px;
@@ -75,23 +83,10 @@
       color: #1e3a8a;
     }
 
-    .lista {
-      margin-top: 1.5rem;
-      background: #f9fafb;
-      border-radius: 8px;
-      padding: 0.5rem;
-    }
-
-    .registro {
-      background: #f1f5f9;
-      margin: 0.3rem 0;
-      padding: 0.7rem;
-      border-radius: 8px;
-      font-size: 0.9rem;
-    }
-
-    .registro strong {
-      color: #1e40af;
+    .logout-btn {
+      background: #dc2626;
+      margin-top: 1rem;
+      width: 100%;
     }
 
     @media (max-width: 480px) {
@@ -106,85 +101,67 @@
   </header>
 
   <div class="container">
+    <div class="status">
+      Estado: <span id="estadoMesa">Abierta</span>
+    </div>
+
     <form id="registroForm">
-      <input type="text" id="nro_orden" placeholder="N° de orden" required />
-      <input type="number" id="cantidad_votos" placeholder="Cantidad de votos" required />
+      <input type="number" id="cantidad_votos" placeholder="Cantidad total de votos" required min="0" />
       <button type="submit">Registrar</button>
     </form>
 
     <div class="total">
-      Total acumulado: <span id="total"><%= total || 0 %></span>
+      Participación actual: <span id="porcentaje"><%= porcentaje || 0 %></span>%
     </div>
 
-    <div class="lista">
-      <h3>Últimos 5 registros</h3>
-      <div id="ultimos"></div>
-    </div>
- <form action="/logout" method="POST">
-    <button class="logout-btn" type="submit">Cerrar sesión</button>
-  </form>
+    <form id="cerrarForm">
+      <button class="logout-btn" type="submit">Cerrar Mesa</button>
+    </form>
+
+    <form action="/logout" method="POST">
+      <button class="logout-btn" type="submit">Cerrar sesión</button>
+    </form>
   </div>
- 
 
   <script>
     const form = document.getElementById("registroForm");
-    const totalEl = document.getElementById("total");
-    const ultimosEl = document.getElementById("ultimos");
+    const cerrarForm = document.getElementById("cerrarForm");
+    const porcentajeEl = document.getElementById("porcentaje");
+    const estadoMesaEl = document.getElementById("estadoMesa");
 
-    // 🔹 Cargar los últimos registros
-    async function cargarUltimos() {
-      const res = await fetch("/ultimos");
-      const data = await res.json();
-      ultimosEl.innerHTML = "";
-
-      if (data.length === 0) {
-        ultimosEl.innerHTML = "<p>No hay registros aún.</p>";
-        return;
-      }
-
-      data.forEach(reg => {
-        const div = document.createElement("div");
-        div.className = "registro";
-        div.innerHTML = `
-          <strong>Orden:</strong> ${reg.nro_orden} <br>
-          <strong>Cant. votos:</strong> ${reg.cantidad_votos} <br>
-          <strong>Fecha:</strong> ${new Date(reg.fecha_registro).toLocaleString("es-AR")}
-        `;
-        ultimosEl.appendChild(div);
-      });
-    }
-
-    // 🔹 Cargar total
-    async function cargarTotal() {
-      const res = await fetch("/total");
-      const data = await res.json();
-      totalEl.textContent = data.total;
-    }
-
-    // 🔹 Enviar registro
+    // 🔹 Enviar actualización de votos
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const nro_orden = document.getElementById("nro_orden").value;
       const cantidad_votos = document.getElementById("cantidad_votos").value;
 
       const res = await fetch("/registrar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nro_orden, cantidad_votos }),
+        body: JSON.stringify({ cantidad_votos }),
       });
 
       const data = await res.json();
       if (data.success) {
-        await cargarTotal();
-        await cargarUltimos();
+        porcentajeEl.textContent = data.porcentaje;
         form.reset();
       } else {
         alert(data.error || "Error al registrar");
       }
     });
 
-    // 🔹 Cargar al iniciar
-    cargarUltimos();
+    // 🔹 Cerrar mesa
+    cerrarForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const res = await fetch("/cerrar", { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        estadoMesaEl.textContent = "Cerrada";
+        estadoMesaEl.style.color = "red";
+        alert("Mesa cerrada correctamente");
+      } else {
+        alert(data.error || "Error al cerrar la mesa");
+      }
+    });
   </script>
 </body>
 </html>

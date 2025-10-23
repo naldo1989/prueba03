@@ -17,7 +17,7 @@ const initDB = async () => {
   nro_mesa VARCHAR(10) NOT NULL,
   cantidad_votantes INT NOT NULL);
     `);
-    console.log("✅ Tabla 'padrones' creada o ya existente.");
+    console.log("✅ Tabla 'participaciones' creada o ya existente.");
     process.exit(0);
   } catch (err) {
     console.error("❌ Error creando tabla:", err);

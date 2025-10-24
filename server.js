@@ -94,7 +94,7 @@ app.post("/login", async (req, res) => {
 });
 
 // === REGISTRAR CANTIDAD DE VOTOS ===
-app.post("/registrar-votos", async (req, res) => {
+app.post("/registrar-v", async (req, res) => {
   const { cantidad_votos } = req.body;
   const sesionId = req.session.sesionId;
 

@@ -3,25 +3,32 @@
 <head>
   <meta charset="UTF-8" />
   <title>Crear Padrón</title>
-  <style>
-    body { font-family: Arial, sans-serif; text-align: center; padding-top: 60px; }
-    input, button { margin: 6px; padding: 10px; width: 240px; }
-    .error { color: red; margin-top: 10px; }
-  </style>
+  <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
-  <h2>Crear Padrón para Escuela/Mesa</h2>
-  <form action="/crearPadron" method="POST">
-    <input type="text" name="nro_escuela" value="<%= nro_escuela %>" placeholder="Nro. Escuela" required /><br>
-    <input type="text" name="nro_mesa" value="<%= nro_mesa %>" placeholder="Nro. Mesa" required /><br>
-    <input type="number" name="cantidad_votantes" placeholder="Cantidad de Votantes" required /><br>
-    <button type="submit">Guardar Padrón</button>
-  </form>
+  <div class="container">
+    <h1>Crear Padrón</h1>
 
-  <% if (error) { %>
-    <p class="error"><%= error %></p>
-  <% } %>
+    <p>Escuela: <strong><%= nro_escuela %></strong></p>
+    <p>Mesa: <strong><%= nro_mesa %></strong></p>
 
-  <p><a href="/login">Volver al login</a></p>
+    <% if (error) { %>
+      <div class="error"><%= error %></div>
+    <% } %>
+
+    <form action="/crearPadron" method="POST">
+      <input type="hidden" name="nro_escuela" value="<%= nro_escuela %>" />
+      <input type="hidden" name="nro_mesa" value="<%= nro_mesa %>" />
+
+      <label>Cantidad de votantes:</label>
+      <input type="number" name="cantidad_votantes" min="1" required />
+
+      <button type="submit">Crear y continuar</button>
+    </form>
+
+    <form action="/logout" method="POST">
+      <button type="submit">Cerrar sesión</button>
+    </form>
+  </div>
 </body>
 </html>

@@ -28,11 +28,12 @@ app.set("views", path.join(__dirname, "views"));
 app.use(express.static(path.join(__dirname, "public")));
 
 // === RUTAS DE INTERFAZ (EJS) ===
-app.get("/", (req, res) => res.render("login"));
-app.get("/dashboard", (req, res) => res.render("dashboard"));
-app.get("/crearPadron", (req, res) => res.render("crearPadron"));
-app.get("/mesa", (req, res) => res.render("mesa"));
-app.get("/registro", (req, res) => res.render("registro"));
+app.get("/", (req, res) => res.render("login", { error: null, success: null }));
+app.get("/login", (req, res) => res.render("login", { error: null, success: null }));
+app.get("/dashboard", (req, res) => res.render("dashboard", { error: null, success: null }));
+app.get("/crearPadron", (req, res) => res.render("crearPadron", { error: null, success: null }));
+app.get("/mesa", (req, res) => res.render("mesa", { error: null, success: null }));
+app.get("/registro", (req, res) => res.render("registro", { error: null, success: null }));
 
 // === LOGIN DE USUARIO ===
 app.post("/login", async (req, res) => {
@@ -45,7 +46,7 @@ app.post("/login", async (req, res) => {
     );
 
     if (userResult.rows.length === 0) {
-      return res.render("login", { error: "Credenciales inválidas" });
+      return res.render("login", { error: "Credenciales inválidas", success: null });
     }
 
     const user = userResult.rows[0];
@@ -86,10 +87,12 @@ app.post("/login", async (req, res) => {
       escuela: nro_escuela,
       mesa: nro_mesa,
       padron,
+      error: null,
+      success: "Login exitoso.",
     });
   } catch (err) {
     console.error("Error en login:", err);
-    res.render("login", { error: "Error interno del servidor" });
+    res.render("login", { error: "Error interno del servidor", success: null });
   }
 });
 
@@ -99,7 +102,7 @@ app.post("/registrar-votos", async (req, res) => {
   const sesionId = req.session.sesionId;
 
   if (!sesionId) {
-    return res.render("login", { error: "Sesión no válida o expirada" });
+    return res.render("login", { error: "Sesión no válida o expirada", success: null });
   }
 
   try {
@@ -109,7 +112,7 @@ app.post("/registrar-votos", async (req, res) => {
     );
 
     if (sesion.rows.length === 0)
-      return res.render("dashboard", { error: "Sesión no encontrada" });
+      return res.render("dashboard", { error: "Sesión no encontrada", success: null });
 
     const { nro_escuela, nro_mesa } = sesion.rows[0];
 
@@ -143,13 +146,14 @@ app.post("/registrar-votos", async (req, res) => {
     }
 
     res.render("dashboard", {
+      error: null,
       success: `Votos registrados correctamente. Participación: ${porcentaje}%`,
       escuela: nro_escuela,
       mesa: nro_mesa,
     });
   } catch (err) {
     console.error("Error registrando votos:", err);
-    res.render("dashboard", { error: "Error al registrar votos" });
+    res.render("dashboard", { error: "Error al registrar votos", success: null });
   }
 });
 
@@ -158,7 +162,7 @@ app.post("/cerrar-mesa", async (req, res) => {
   const sesionId = req.session.sesionId;
 
   if (!sesionId) {
-    return res.render("login", { error: "Sesión expirada" });
+    return res.render("login", { error: "Sesión expirada", success: null });
   }
 
   try {
@@ -168,7 +172,7 @@ app.post("/cerrar-mesa", async (req, res) => {
     );
 
     if (sesion.rows.length === 0)
-      return res.render("dashboard", { error: "Sesión no encontrada" });
+      return res.render("dashboard", { error: "Sesión no encontrada", success: null });
 
     const { nro_escuela, nro_mesa } = sesion.rows[0];
 
@@ -178,20 +182,21 @@ app.post("/cerrar-mesa", async (req, res) => {
     );
 
     res.render("dashboard", {
+      error: null,
       success: "Mesa cerrada correctamente.",
       escuela: nro_escuela,
       mesa: nro_mesa,
     });
   } catch (err) {
     console.error("Error cerrando mesa:", err);
-    res.render("dashboard", { error: "Error al cerrar mesa" });
+    res.render("dashboard", { error: "Error al cerrar mesa", success: null });
   }
 });
 
 // === LOGOUT ===
 app.post("/logout", (req, res) => {
   req.session.destroy(() => {
-    res.render("login", { success: "Sesión finalizada correctamente" });
+    res.render("login", { error: null, success: "Sesión finalizada correctamente" });
   });
 });
 

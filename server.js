@@ -121,7 +121,7 @@ app.get("/dashboard", async (req, res) => {
     const cantidad_votantes = padron.rows[0]?.cantidad_votantes || 0;
 
     const participacion = await pool.query(
-      "SELECT total_votaron, cerrado FROM participaciones WHERE nro_escuela=$1 AND nro_mesa=$2",
+      "SELECT total_votaron, cerrado FROM participaciones1 WHERE nro_escuela=$1 AND nro_mesa=$2",
       [nro_escuela, nro_mesa]
     );
 
@@ -177,7 +177,7 @@ app.post("/registrar-v", async (req, res) => {
 
     // Buscar participación
     const participacion = await pool.query(
-      "SELECT * FROM participaciones WHERE nro_escuela=$1 AND nro_mesa=$2",
+      "SELECT * FROM participaciones1 WHERE nro_escuela=$1 AND nro_mesa=$2",
       [nro_escuela, nro_mesa]
     );
 
@@ -186,13 +186,13 @@ app.post("/registrar-v", async (req, res) => {
     if (participacion.rows.length === 0) {
       // Primera carga
       await pool.query(
-        "INSERT INTO participaciones (nro_escuela, nro_mesa, total_votaron, fecha_actualizacion) VALUES ($1, $2, $3, NOW())",
+        "INSERT INTO participaciones1 (nro_escuela, nro_mesa, total_votaron, fecha_actualizacion) VALUES ($1, $2, $3, NOW())",
         [nro_escuela, nro_mesa, votosNuevos]
       );
     } else {
       // Acumula sobre el total existente
       await pool.query(
-        "UPDATE participaciones SET total_votaron = total_votaron + $1, fecha_actualizacion = NOW() WHERE nro_escuela=$2 AND nro_mesa=$3",
+        "UPDATE participaciones1 SET total_votaron = total_votaron + $1, fecha_actualizacion = NOW() WHERE nro_escuela=$2 AND nro_mesa=$3",
         [votosNuevos, nro_escuela, nro_mesa]
       );
     }
@@ -206,7 +206,7 @@ app.post("/registrar-v", async (req, res) => {
     const cantidad_votantes = padron.rows[0]?.cantidad_votantes || 0;
 
     const totalVotosResult = await pool.query(
-      "SELECT total_votaron FROM participaciones WHERE nro_escuela=$1 AND nro_mesa=$2",
+      "SELECT total_votaron FROM participaciones1 WHERE nro_escuela=$1 AND nro_mesa=$2",
       [nro_escuela, nro_mesa]
     );
 
@@ -250,7 +250,7 @@ app.post("/cerrar-mesa", async (req, res) => {
     const { nro_escuela, nro_mesa } = sesion.rows[0];
 
     await pool.query(
-      "UPDATE participaciones SET cerrado=true, fecha_actualizacion=NOW() WHERE nro_escuela=$1 AND nro_mesa=$2",
+      "UPDATE participaciones1 SET cerrado=true, fecha_actualizacion=NOW() WHERE nro_escuela=$1 AND nro_mesa=$2",
       [nro_escuela, nro_mesa]
     );
 

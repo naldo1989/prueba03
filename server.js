@@ -123,7 +123,7 @@ app.post("/registrar-v", async (req, res) => {
 
     if (participacion.rows.length === 0) {
       await pool.query(
-        "INSERT INTO participaciones (nro_escuela, nro_mesa, total_votaron) VALUES ($1, $2, $3)",
+        "INSERT INTO participaciones (nro_escuela, nro_mesa, total_votaron, fecha_actualizacion) VALUES ($1, $2, $3, NOW())",
         [nro_escuela, nro_mesa, total_votaron]
       );
     } else {

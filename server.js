@@ -30,9 +30,6 @@ app.use(express.static(path.join(__dirname, "public")));
 // === RUTAS DE INTERFAZ (EJS) ===
 app.get("/", (req, res) => res.render("login", { error: null, success: null }));
 app.get("/login", (req, res) => res.render("login", { error: null, success: null }));
-app.get("/dashboard", (req, res) => res.render("dashboard", { error: null, success: null }));
-app.get("/crearPadron", (req, res) => res.render("crearPadron", { error: null, success: null }));
-app.get("/mesa", (req, res) => res.render("mesa", { error: null, success: null }));
 app.get("/registro", (req, res) => res.render("registro", { error: null, success: null }));
 
 // === LOGIN DE USUARIO ===
@@ -52,13 +49,12 @@ app.post("/login", async (req, res) => {
     const user = userResult.rows[0];
     req.session.userId = user.id;
 
-    // Verificar si existe el padrón para esa escuela y mesa
+    // Verificar si existe el padrón
     const padronResult = await pool.query(
       "SELECT * FROM padrones WHERE nro_escuela = $1 AND nro_mesa = $2",
       [nro_escuela, nro_mesa]
     );
 
-    // Si no existe, se crea automáticamente
     let padron;
     if (padronResult.rows.length === 0) {
       const newPadron = await pool.query(
@@ -83,12 +79,13 @@ app.post("/login", async (req, res) => {
     req.session.mesa = nro_mesa;
 
     res.render("dashboard", {
-      user,
-      escuela: nro_escuela,
-      mesa: nro_mesa,
-      padron,
-      error: null,
-      success: "Login exitoso.",
+      nro_escuela,
+      nro_mesa,
+      cantidad_votantes: padron.cantidad_votantes,
+      total_votaron: 0,
+      porcentaje: 0,
+      cerrado: false,
+      mensaje: `Bienvenido ${user.nombre}, ya podés registrar votos.`,
     });
   } catch (err) {
     console.error("Error en login:", err);
@@ -98,7 +95,7 @@ app.post("/login", async (req, res) => {
 
 // === REGISTRAR CANTIDAD DE VOTOS ===
 app.post("/registrar-votos", async (req, res) => {
-  const { total_votaron } = req.body;
+  const { cantidad_votos } = req.body;
   const sesionId = req.session.sesionId;
 
   if (!sesionId) {
@@ -112,7 +109,7 @@ app.post("/registrar-votos", async (req, res) => {
     );
 
     if (sesion.rows.length === 0)
-      return res.render("dashboard", { error: "Sesión no encontrada", success: null });
+      return res.render("dashboard", { error: "Sesión no encontrada" });
 
     const { nro_escuela, nro_mesa } = sesion.rows[0];
 
@@ -121,6 +118,8 @@ app.post("/registrar-votos", async (req, res) => {
       "SELECT * FROM participaciones WHERE nro_escuela = $1 AND nro_mesa = $2",
       [nro_escuela, nro_mesa]
     );
+
+    let total_votaron = parseInt(cantidad_votos);
 
     if (participacion.rows.length === 0) {
       await pool.query(
@@ -134,22 +133,27 @@ app.post("/registrar-votos", async (req, res) => {
       );
     }
 
-    // Obtener datos del padrón para calcular porcentaje
+    // Obtener datos del padrón
     const padron = await pool.query(
       "SELECT cantidad_votantes FROM padrones WHERE nro_escuela = $1 AND nro_mesa = $2",
       [nro_escuela, nro_mesa]
     );
 
+    const cantidad_votantes = padron.rows[0]?.cantidad_votantes || 0;
     let porcentaje = 0;
-    if (padron.rows.length > 0 && padron.rows[0].cantidad_votantes > 0) {
-      porcentaje = ((total_votaron / padron.rows[0].cantidad_votantes) * 100).toFixed(2);
+
+    if (cantidad_votantes > 0) {
+      porcentaje = ((total_votaron / cantidad_votantes) * 100).toFixed(2);
     }
 
     res.render("dashboard", {
-      error: null,
-      success: `Votos registrados correctamente. Participación: ${porcentaje}%`,
-      escuela: nro_escuela,
-      mesa: nro_mesa,
+      nro_escuela,
+      nro_mesa,
+      cantidad_votantes,
+      total_votaron,
+      porcentaje,
+      cerrado: false,
+      mensaje: `Votos registrados correctamente. Participación: ${porcentaje}%`,
     });
   } catch (err) {
     console.error("Error registrando votos:", err);
@@ -181,11 +185,19 @@ app.post("/cerrar-mesa", async (req, res) => {
       [nro_escuela, nro_mesa]
     );
 
+    const padron = await pool.query(
+      "SELECT cantidad_votantes FROM padrones WHERE nro_escuela = $1 AND nro_mesa = $2",
+      [nro_escuela, nro_mesa]
+    );
+
     res.render("dashboard", {
-      error: null,
-      success: "Mesa cerrada correctamente.",
-      escuela: nro_escuela,
-      mesa: nro_mesa,
+      nro_escuela,
+      nro_mesa,
+      cantidad_votantes: padron.rows[0]?.cantidad_votantes || 0,
+      total_votaron: 0,
+      porcentaje: 0,
+      cerrado: true,
+      mensaje: "Mesa cerrada correctamente.",
     });
   } catch (err) {
     console.error("Error cerrando mesa:", err);

@@ -24,9 +24,15 @@
         <button type="submit">Registrar</button>
       </form>
 
-      <form action="/cerrar-mesa" method="POST">
-        <button type="submit">Cerrar mesa</button>
-      </form>
+   <form id="cerrarForm" action="/cerrar-mesa" method="POST" onsubmit="return confirmarCierre()">
+  <button type="submit">Cerrar mesa</button>
+</form>
+
+<script>
+  function confirmarCierre() {
+    return confirm("⚠️ ¿Estás seguro de que querés cerrar la mesa? Una vez cerrada no se podrán registrar más votos.");
+  }
+</script>
     <% } else { %>
       <h3 class="cerrado">Mesa Cerrada</h3>
     <% } %>

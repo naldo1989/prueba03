@@ -34,7 +34,7 @@ app.get("/registro", (req, res) => res.render("registro", { error: null, success
 
 // === LOGIN DE USUARIO ===
 app.post("/login", async (req, res) => {
-  const { dni, password, nro_escuela, nro_mesa } = req.body;
+  const { dni, password, nro_escuela, nro_mesa, cantidad_votantes } = req.body;
 
   try {
     const userResult = await pool.query(
@@ -59,7 +59,7 @@ app.post("/login", async (req, res) => {
     if (padronResult.rows.length === 0) {
       const newPadron = await pool.query(
         "INSERT INTO padrones (nro_escuela, nro_mesa, cantidad_votantes) VALUES ($1, $2, $3) RETURNING *",
-        [nro_escuela, nro_mesa, 0]
+        [nro_escuela, nro_mesa, cantidad_votantes]
       );
       padron = newPadron.rows[0];
     } else {

@@ -27,12 +27,12 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 app.use(express.static(path.join(__dirname, "public")));
 
-// === RUTAS DE INTERFAZ (EJS) ===
+// === RUTAS DE INTERFAZ ===
 app.get("/", (req, res) => res.render("login", { error: null, success: null }));
 app.get("/login", (req, res) => res.render("login", { error: null, success: null }));
 app.get("/registro", (req, res) => res.render("registro", { error: null, success: null }));
 
-// === LOGIN DE USUARIO ===
+// === LOGIN ===
 app.post("/login", async (req, res) => {
   const { dni, password, nro_escuela, nro_mesa, cantidad_votantes } = req.body;
 
@@ -75,32 +75,20 @@ app.post("/login", async (req, res) => {
     );
 
     req.session.sesionId = sesionResult.rows[0].id;
-    req.session.escuela = nro_escuela;
-    req.session.mesa = nro_mesa;
 
-    res.render("dashboard", {
-      nro_escuela,
-      nro_mesa,
-      cantidad_votantes: padron.cantidad_votantes,
-      total_votaron: 0,
-      porcentaje: 0,
-      cerrado: false,
-      mensaje: `Bienvenido ${user.nombre}, ya podés registrar votos.`,
-    });
+    // Redirigir al dashboard
+    res.redirect("/dashboard");
   } catch (err) {
     console.error("Error en login:", err);
     res.render("login", { error: "Error interno del servidor", success: null });
   }
 });
 
-// === REGISTRAR CANTIDAD DE VOTOS ===
-app.post("/registrar-v", async (req, res) => {
-  const { cantidad_votos } = req.body;
+// === DASHBOARD ===
+app.get("/dashboard", async (req, res) => {
   const sesionId = req.session.sesionId;
-
-  if (!sesionId) {
-    return res.render("login", { error: "Sesión no válida o expirada", success: null });
-  }
+  if (!sesionId)
+    return res.render("login", { error: "Sesión expirada", success: null });
 
   try {
     const sesion = await pool.query(
@@ -109,13 +97,71 @@ app.post("/registrar-v", async (req, res) => {
     );
 
     if (sesion.rows.length === 0)
-      return res.render("dashboard", { error: "Sesión no encontrada" });
+      return res.render("login", { error: "Sesión no encontrada", success: null });
 
     const { nro_escuela, nro_mesa } = sesion.rows[0];
 
-    // Buscar o crear participación
+    const padron = await pool.query(
+      "SELECT cantidad_votantes FROM padrones WHERE nro_escuela=$1 AND nro_mesa=$2",
+      [nro_escuela, nro_mesa]
+    );
+    const cantidad_votantes = padron.rows[0]?.cantidad_votantes || 0;
+
     const participacion = await pool.query(
-      "SELECT * FROM participaciones WHERE nro_escuela = $1 AND nro_mesa = $2",
+      "SELECT total_votaron, cerrado FROM participaciones WHERE nro_escuela=$1 AND nro_mesa=$2",
+      [nro_escuela, nro_mesa]
+    );
+
+    const total_votaron = participacion.rows[0]?.total_votaron || 0;
+    const cerrado = participacion.rows[0]?.cerrado || false;
+    const porcentaje =
+      cantidad_votantes > 0
+        ? ((total_votaron / cantidad_votantes) * 100).toFixed(2)
+        : 0;
+
+    res.render("dashboard", {
+      nro_escuela,
+      nro_mesa,
+      cantidad_votantes,
+      total_votaron,
+      porcentaje,
+      cerrado,
+      mensaje: null,
+      error: null,
+    });
+  } catch (err) {
+    console.error("Error cargando dashboard:", err);
+    res.render("dashboard", {
+      nro_escuela: null,
+      nro_mesa: null,
+      cantidad_votantes: 0,
+      total_votaron: 0,
+      porcentaje: 0,
+      cerrado: false,
+      mensaje: null,
+      error: "Error al cargar el dashboard",
+    });
+  }
+});
+
+// === REGISTRAR VOTOS ===
+app.post("/registrar-v", async (req, res) => {
+  const { cantidad_votos } = req.body;
+  const sesionId = req.session.sesionId;
+
+  if (!sesionId)
+    return res.render("login", { error: "Sesión no válida o expirada", success: null });
+
+  try {
+    const sesion = await pool.query(
+      "SELECT nro_escuela, nro_mesa FROM sesiones_usuario WHERE id=$1",
+      [sesionId]
+    );
+
+    const { nro_escuela, nro_mesa } = sesion.rows[0];
+
+    const participacion = await pool.query(
+      "SELECT * FROM participaciones WHERE nro_escuela=$1 AND nro_mesa=$2",
       [nro_escuela, nro_mesa]
     );
 
@@ -124,27 +170,24 @@ app.post("/registrar-v", async (req, res) => {
     if (participacion.rows.length === 0) {
       await pool.query(
         "INSERT INTO participaciones (nro_escuela, nro_mesa, total_votaron, fecha_actualizacion) VALUES ($1, $2, $3, NOW())",
-        [nro_escuela, nro_mesa, total_votaron, fecha_actualizacion]
+        [nro_escuela, nro_mesa, total_votaron]
       );
     } else {
       await pool.query(
-        "UPDATE participaciones SET total_votaron = $1, fecha_actualizacion = NOW() WHERE nro_escuela = $2 AND nro_mesa = $3",
+        "UPDATE participaciones SET total_votaron=$1, fecha_actualizacion=NOW() WHERE nro_escuela=$2 AND nro_mesa=$3",
         [total_votaron, nro_escuela, nro_mesa]
       );
     }
 
-    // Obtener datos del padrón
     const padron = await pool.query(
-      "SELECT cantidad_votantes FROM padrones WHERE nro_escuela = $1 AND nro_mesa = $2",
+      "SELECT cantidad_votantes FROM padrones WHERE nro_escuela=$1 AND nro_mesa=$2",
       [nro_escuela, nro_mesa]
     );
-
     const cantidad_votantes = padron.rows[0]?.cantidad_votantes || 0;
-    let porcentaje = 0;
-
-    if (cantidad_votantes > 0) {
-      porcentaje = ((total_votaron / cantidad_votantes) * 100).toFixed(2);
-    }
+    const porcentaje =
+      cantidad_votantes > 0
+        ? ((total_votaron / cantidad_votantes) * 100).toFixed(2)
+        : 0;
 
     res.render("dashboard", {
       nro_escuela,
@@ -154,6 +197,7 @@ app.post("/registrar-v", async (req, res) => {
       porcentaje,
       cerrado: false,
       mensaje: `Votos registrados correctamente. Participación: ${porcentaje}%`,
+      error: null,
     });
   } catch (err) {
     console.error("Error registrando votos:", err);
@@ -165,28 +209,24 @@ app.post("/registrar-v", async (req, res) => {
 app.post("/cerrar-mesa", async (req, res) => {
   const sesionId = req.session.sesionId;
 
-  if (!sesionId) {
+  if (!sesionId)
     return res.render("login", { error: "Sesión expirada", success: null });
-  }
 
   try {
     const sesion = await pool.query(
-      "SELECT nro_escuela, nro_mesa FROM sesiones_usuario WHERE id = $1",
+      "SELECT nro_escuela, nro_mesa FROM sesiones_usuario WHERE id=$1",
       [sesionId]
     );
-
-    if (sesion.rows.length === 0)
-      return res.render("dashboard", { error: "Sesión no encontrada", success: null });
 
     const { nro_escuela, nro_mesa } = sesion.rows[0];
 
     await pool.query(
-      "UPDATE participaciones SET cerrado = true WHERE nro_escuela = $1 AND nro_mesa = $2",
+      "UPDATE participaciones SET cerrado=true, fecha_actualizacion=NOW() WHERE nro_escuela=$1 AND nro_mesa=$2",
       [nro_escuela, nro_mesa]
     );
 
     const padron = await pool.query(
-      "SELECT cantidad_votantes FROM padrones WHERE nro_escuela = $1 AND nro_mesa = $2",
+      "SELECT cantidad_votantes FROM padrones WHERE nro_escuela=$1 AND nro_mesa=$2",
       [nro_escuela, nro_mesa]
     );
 
@@ -198,6 +238,7 @@ app.post("/cerrar-mesa", async (req, res) => {
       porcentaje: 0,
       cerrado: true,
       mensaje: "Mesa cerrada correctamente.",
+      error: null,
     });
   } catch (err) {
     console.error("Error cerrando mesa:", err);

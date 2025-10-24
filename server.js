@@ -52,7 +52,7 @@ app.post("/login", async (req, res) => {
     // Verificar si existe el padrón
     const padronResult = await pool.query(
       "SELECT * FROM padrones WHERE nro_escuela = $1 AND nro_mesa = $2",
-      [nro_escuela, nro_mesa]
+      [nro_escuela, nro_mesa, cantidad_votantes]
     );
 
     let padron;

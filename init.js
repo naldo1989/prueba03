@@ -24,7 +24,7 @@ const initDB = async () => {
     console.log("✅ Tabla 'padrones' creada o ya existente.");
 
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS participaciones (
+      CREATE TABLE IF NOT EXISTS participaciones1 (
         id SERIAL PRIMARY KEY,
         nro_escuela VARCHAR(10) NOT NULL,
         nro_mesa VARCHAR(10) NOT NULL,
@@ -33,7 +33,7 @@ const initDB = async () => {
         fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-    console.log("✅ Tabla 'participaciones' creada o ya existente.");
+    console.log("✅ Tabla 'participaciones1' creada o ya existente.");
 
     await pool.query(`
       CREATE TABLE IF NOT EXISTS sesiones_usuario (

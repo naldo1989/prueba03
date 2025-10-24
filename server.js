@@ -2,9 +2,15 @@ import express from "express";
 import session from "express-session";
 import bodyParser from "body-parser";
 import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
 import { pool } from "./db.js";
 
 const app = express();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// === CONFIGURACIÓN BASE ===
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -17,6 +23,17 @@ app.use(
   })
 );
 
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "views"));
+app.use(express.static(path.join(__dirname, "public")));
+
+// === RUTAS DE INTERFAZ (EJS) ===
+app.get("/", (req, res) => res.render("login"));
+app.get("/dashboard", (req, res) => res.render("dashboard"));
+app.get("/crearPadron", (req, res) => res.render("crearPadron"));
+app.get("/mesa", (req, res) => res.render("mesa"));
+app.get("/registro", (req, res) => res.render("registro"));
+
 // === LOGIN DE USUARIO ===
 app.post("/login", async (req, res) => {
   const { dni, password, nro_escuela, nro_mesa } = req.body;
@@ -28,7 +45,7 @@ app.post("/login", async (req, res) => {
     );
 
     if (userResult.rows.length === 0) {
-      return res.status(401).json({ message: "Credenciales inválidas" });
+      return res.render("login", { error: "Credenciales inválidas" });
     }
 
     const user = userResult.rows[0];
@@ -40,7 +57,7 @@ app.post("/login", async (req, res) => {
       [nro_escuela, nro_mesa]
     );
 
-    // Si no existe, se crea automáticamente con cantidad_votantes = 0
+    // Si no existe, se crea automáticamente
     let padron;
     if (padronResult.rows.length === 0) {
       const newPadron = await pool.query(
@@ -52,7 +69,7 @@ app.post("/login", async (req, res) => {
       padron = padronResult.rows[0];
     }
 
-    // Crear o registrar sesión del usuario
+    // Registrar sesión del usuario
     const sesionResult = await pool.query(
       `INSERT INTO sesiones_usuario (usuario_id, nro_escuela, nro_mesa)
        VALUES ($1, $2, $3)
@@ -61,38 +78,38 @@ app.post("/login", async (req, res) => {
     );
 
     req.session.sesionId = sesionResult.rows[0].id;
+    req.session.escuela = nro_escuela;
+    req.session.mesa = nro_mesa;
 
-    res.json({
-      message: "Login exitoso",
-      user: { nombre: user.nombre, apellido: user.apellido },
+    res.render("dashboard", {
+      user,
       escuela: nro_escuela,
       mesa: nro_mesa,
       padron,
     });
   } catch (err) {
     console.error("Error en login:", err);
-    res.status(500).json({ message: "Error interno del servidor" });
+    res.render("login", { error: "Error interno del servidor" });
   }
 });
 
-// === CARGAR CANTIDAD DE VOTOS ===
+// === REGISTRAR CANTIDAD DE VOTOS ===
 app.post("/registrar-votos", async (req, res) => {
   const { total_votaron } = req.body;
   const sesionId = req.session.sesionId;
 
   if (!sesionId) {
-    return res.status(403).json({ message: "Sesión no válida" });
+    return res.render("login", { error: "Sesión no válida o expirada" });
   }
 
   try {
-    // Obtener datos de la sesión
     const sesion = await pool.query(
       "SELECT nro_escuela, nro_mesa FROM sesiones_usuario WHERE id = $1",
       [sesionId]
     );
 
     if (sesion.rows.length === 0)
-      return res.status(404).json({ message: "Sesión no encontrada" });
+      return res.render("dashboard", { error: "Sesión no encontrada" });
 
     const { nro_escuela, nro_mesa } = sesion.rows[0];
 
@@ -114,10 +131,25 @@ app.post("/registrar-votos", async (req, res) => {
       );
     }
 
-    res.json({ message: "Votos registrados correctamente" });
+    // Obtener datos del padrón para calcular porcentaje
+    const padron = await pool.query(
+      "SELECT cantidad_votantes FROM padrones WHERE nro_escuela = $1 AND nro_mesa = $2",
+      [nro_escuela, nro_mesa]
+    );
+
+    let porcentaje = 0;
+    if (padron.rows.length > 0 && padron.rows[0].cantidad_votantes > 0) {
+      porcentaje = ((total_votaron / padron.rows[0].cantidad_votantes) * 100).toFixed(2);
+    }
+
+    res.render("dashboard", {
+      success: `Votos registrados correctamente. Participación: ${porcentaje}%`,
+      escuela: nro_escuela,
+      mesa: nro_mesa,
+    });
   } catch (err) {
     console.error("Error registrando votos:", err);
-    res.status(500).json({ message: "Error al registrar votos" });
+    res.render("dashboard", { error: "Error al registrar votos" });
   }
 });
 
@@ -125,8 +157,9 @@ app.post("/registrar-votos", async (req, res) => {
 app.post("/cerrar-mesa", async (req, res) => {
   const sesionId = req.session.sesionId;
 
-  if (!sesionId)
-    return res.status(403).json({ message: "Sesión no válida o expirada" });
+  if (!sesionId) {
+    return res.render("login", { error: "Sesión expirada" });
+  }
 
   try {
     const sesion = await pool.query(
@@ -135,7 +168,7 @@ app.post("/cerrar-mesa", async (req, res) => {
     );
 
     if (sesion.rows.length === 0)
-      return res.status(404).json({ message: "Sesión no encontrada" });
+      return res.render("dashboard", { error: "Sesión no encontrada" });
 
     const { nro_escuela, nro_mesa } = sesion.rows[0];
 
@@ -144,17 +177,21 @@ app.post("/cerrar-mesa", async (req, res) => {
       [nro_escuela, nro_mesa]
     );
 
-    res.json({ message: "Mesa cerrada correctamente" });
+    res.render("dashboard", {
+      success: "Mesa cerrada correctamente.",
+      escuela: nro_escuela,
+      mesa: nro_mesa,
+    });
   } catch (err) {
     console.error("Error cerrando mesa:", err);
-    res.status(500).json({ message: "Error al cerrar mesa" });
+    res.render("dashboard", { error: "Error al cerrar mesa" });
   }
 });
 
 // === LOGOUT ===
 app.post("/logout", (req, res) => {
   req.session.destroy(() => {
-    res.json({ message: "Sesión finalizada" });
+    res.render("login", { success: "Sesión finalizada correctamente" });
   });
 });
 

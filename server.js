@@ -233,6 +233,31 @@ app.post("/registrar-v", async (req, res) => {
   }
 });
 
+// === REGISTRO DE NUEVO USUARIO ===
+app.post("/registro", async (req, res) => {
+  const { dni, password, nombre, apellido } = req.body;
+
+  try {
+    // Verificar si el usuario ya existe
+    const existe = await pool.query("SELECT * FROM usuarios WHERE dni = $1", [dni]);
+    if (existe.rows.length > 0) {
+      return res.render("registro", { error: "El usuario ya existe", success: null });
+    }
+
+    // Crear el nuevo usuario
+    await pool.query(
+      "INSERT INTO usuarios (dni, password, nombre, apellido) VALUES ($1, $2, $3, $4)",
+      [dni, password, nombre, apellido]
+    );
+
+    res.render("login", { success: "Usuario registrado correctamente. Ya podés iniciar sesión.", error: null });
+  } catch (err) {
+    console.error("Error registrando usuario:", err);
+    res.render("registro", { error: "Error interno al registrar el usuario", success: null });
+  }
+});
+
+
 
 // === CERRAR MESA ===
 app.post("/cerrar-mesa", async (req, res) => {

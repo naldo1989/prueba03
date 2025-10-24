@@ -1,166 +1,211 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Control de Votación</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - Participación</title>
   <style>
+    :root {
+      --primario: #1e3c72;
+      --secundario: #2a5298;
+      --verde: #4CAF50;
+      --rojo: #e74c3c;
+      --texto: #ffffff;
+    }
+
     body {
-      font-family: Arial, sans-serif;
-      background-color: #f3f4f6;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, var(--primario), var(--secundario));
+      color: var(--texto);
       margin: 0;
       padding: 0;
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: flex-start;
       min-height: 100vh;
-    }
-
-    header {
-      width: 100%;
-      background: #2563eb;
-      color: white;
-      text-align: center;
-      padding: 1rem;
-      font-size: 1.3rem;
-      font-weight: bold;
     }
 
     .container {
       width: 95%;
-      max-width: 500px;
-      background: white;
-      margin-top: 1rem;
-      padding: 1rem;
-      border-radius: 12px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      max-width: 420px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 15px;
+      padding: 20px;
+      margin-top: 30px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.4);
+      backdrop-filter: blur(8px);
+      text-align: center;
     }
 
-    form {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
+    h2 {
+      margin-bottom: 10px;
+      font-size: 1.4em;
     }
 
-    input {
-      padding: 0.8rem;
-      border: 1px solid #ccc;
+    .info {
+      font-size: 0.95em;
+      margin-bottom: 20px;
+      opacity: 0.9;
+    }
+
+    .porcentaje {
+      font-size: 2.5em;
+      font-weight: bold;
+      margin: 15px 0;
+    }
+
+    .barra {
+      width: 100%;
+      background: rgba(255,255,255,0.2);
+      border-radius: 10px;
+      overflow: hidden;
+      height: 22px;
+      margin-bottom: 15px;
+    }
+
+    .relleno {
+      height: 100%;
+      background: var(--verde);
+      width: 0%;
+      transition: width 0.6s ease-in-out;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
       border-radius: 8px;
-      font-size: 1rem;
+      border: none;
+      text-align: center;
+      font-size: 1.1em;
     }
 
     button {
-      background: #2563eb;
-      color: white;
+      width: 100%;
+      padding: 12px;
       border: none;
-      padding: 0.8rem;
-      border-radius: 8px;
-      font-size: 1rem;
+      border-radius: 10px;
+      margin-top: 10px;
+      font-size: 1.1em;
       cursor: pointer;
       font-weight: bold;
+      color: #fff;
+      transition: transform 0.2s;
     }
 
     button:hover {
-      background: #1d4ed8;
+      transform: scale(1.04);
     }
 
-    .status {
-      text-align: center;
-      margin-bottom: 1rem;
-      font-size: 1rem;
+    #btnRegistrar {
+      background: var(--verde);
+    }
+
+    #btnCerrar {
+      background: var(--rojo);
+    }
+
+    #btnSalir {
+      background: #888;
+    }
+
+    .mensaje {
+      margin-top: 10px;
+      font-size: 0.95em;
       font-weight: bold;
-      color: #1e3a8a;
-    }
-
-    .total {
-      background: #e0f2fe;
-      border-radius: 8px;
-      padding: 1rem;
-      text-align: center;
-      font-size: 1.2rem;
-      margin-top: 1rem;
-      font-weight: bold;
-      color: #1e3a8a;
-    }
-
-    .logout-btn {
-      background: #dc2626;
-      margin-top: 1rem;
-      width: 100%;
+      color: #a6ff96;
     }
 
     @media (max-width: 480px) {
-      header { font-size: 1.1rem; }
-      input, button { font-size: 0.9rem; }
+      h2 { font-size: 1.3em; }
+      .porcentaje { font-size: 2em; }
     }
   </style>
 </head>
 <body>
-  <header>
-    Escuela <%= nro_escuela %> | Mesa <%= nro_mesa %>
-  </header>
-
   <div class="container">
-    <div class="status">
-      Estado: <span id="estadoMesa">Abierta</span>
+    <h2>Escuela <%= nro_escuela %> - Mesa <%= nro_mesa %></h2>
+    <p class="info">Seguimiento de participación electoral</p>
+
+    <div class="porcentaje" id="porcentaje"><%= porcentaje %>%</div>
+    <div class="barra">
+      <div class="relleno" id="barra" style="width: <%= porcentaje %>%"></div>
     </div>
 
-    <form id="registroForm">
-      <input type="number" id="cantidad_votos" placeholder="Cantidad total de votos" required min="0" />
-      <button type="submit">Registrar</button>
-    </form>
+    <% if (!cerrado) { %>
+      <form id="formVotos">
+        <input type="number" name="cantidad_votos" min="1" max="999" placeholder="Cantidad de votos a sumar" required>
+        <button type="submit" id="btnRegistrar">Registrar votos</button>
+      </form>
 
-    <div class="total">
-      Participación actual: <span id="porcentaje"><%= porcentaje || 0 %></span>%
-    </div>
+      <button id="btnCerrar">Cerrar mesa</button>
+    <% } else { %>
+      <p class="mensaje">✅ Mesa cerrada. No se permiten más cargas.</p>
+    <% } %>
 
-    <form id="cerrarForm">
-      <button class="logout-btn" type="submit">Cerrar Mesa</button>
-    </form>
+    <button id="btnSalir">Salir</button>
 
-    <form action="/logout" method="POST">
-      <button class="logout-btn" type="submit">Cerrar sesión</button>
-    </form>
+    <p class="mensaje" id="mensaje"></p>
   </div>
 
   <script>
-    const form = document.getElementById("registroForm");
-    const cerrarForm = document.getElementById("cerrarForm");
-    const porcentajeEl = document.getElementById("porcentaje");
-    const estadoMesaEl = document.getElementById("estadoMesa");
+    document.addEventListener("DOMContentLoaded", () => {
+      const form = document.getElementById("formVotos");
+      const barra = document.getElementById("barra");
+      const porcentaje = document.getElementById("porcentaje");
+      const mensaje = document.getElementById("mensaje");
 
-    // 🔹 Enviar actualización de votos
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const cantidad_votos = document.getElementById("cantidad_votos").value;
+      if (form) {
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const datos = Object.fromEntries(new FormData(form));
+          const cantidad = parseInt(datos.cantidad_votos);
 
-      const res = await fetch("/registrar", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cantidad_votos }),
+          if (isNaN(cantidad) || cantidad <= 0) {
+            mensaje.textContent = "⚠️ Ingrese una cantidad válida.";
+            return;
+          }
+
+          const res = await fetch("/registrar", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ cantidad_votos: cantidad }),
+          });
+
+          const data = await res.json();
+          if (data.success) {
+            porcentaje.textContent = data.porcentaje + "%";
+            barra.style.width = data.porcentaje + "%";
+            mensaje.textContent = "✅ Votos registrados correctamente.";
+            form.reset();
+          } else {
+            mensaje.textContent = "⚠️ " + (data.error || "Error al registrar votos.");
+          }
+        });
+      }
+
+      const btnCerrar = document.getElementById("btnCerrar");
+      if (btnCerrar) {
+        btnCerrar.addEventListener("click", async () => {
+          if (!confirm("¿Seguro que querés cerrar la mesa?")) return;
+          const res = await fetch("/cerrar", { method: "POST" });
+          const data = await res.json();
+
+          if (data.success) {
+            mensaje.textContent = "✅ Mesa cerrada correctamente.";
+            setTimeout(() => location.reload(), 1000);
+          } else {
+            mensaje.textContent = "⚠️ Error al cerrar mesa.";
+          }
+        });
+      }
+
+      const btnSalir = document.getElementById("btnSalir");
+      btnSalir.addEventListener("click", async () => {
+        await fetch("/logout", { method: "POST" });
+        window.location.href = "/login";
       });
-
-      const data = await res.json();
-      if (data.success) {
-        porcentajeEl.textContent = data.porcentaje;
-        form.reset();
-      } else {
-        alert(data.error || "Error al registrar");
-      }
-    });
-
-    // 🔹 Cerrar mesa
-    cerrarForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const res = await fetch("/cerrar", { method: "POST" });
-      const data = await res.json();
-      if (data.success) {
-        estadoMesaEl.textContent = "Cerrada";
-        estadoMesaEl.style.color = "red";
-        alert("Mesa cerrada correctamente");
-      } else {
-        alert(data.error || "Error al cerrar la mesa");
-      }
     });
   </script>
 </body>

@@ -33,6 +33,7 @@ app.get("/login", (req, res) => res.render("login", { error: null, success: null
 app.get("/registro", (req, res) => res.render("registro", { error: null, success: null }));
 
 // === LOGIN ===
+// === LOGIN ===
 app.post("/login", async (req, res) => {
   const { dni, password, nro_escuela, nro_mesa, cantidad_votantes } = req.body;
 
@@ -49,7 +50,7 @@ app.post("/login", async (req, res) => {
     const user = userResult.rows[0];
     req.session.userId = user.id;
 
-    // Verificar si existe el padrón
+    // Buscar el padrón correspondiente
     const padronResult = await pool.query(
       "SELECT * FROM padrones WHERE nro_escuela = $1 AND nro_mesa = $2",
       [nro_escuela, nro_mesa]
@@ -57,13 +58,23 @@ app.post("/login", async (req, res) => {
 
     let padron;
     if (padronResult.rows.length === 0) {
+      // Si no existe, lo crea
       const newPadron = await pool.query(
         "INSERT INTO padrones (nro_escuela, nro_mesa, cantidad_votantes) VALUES ($1, $2, $3) RETURNING *",
         [nro_escuela, nro_mesa, cantidad_votantes]
       );
       padron = newPadron.rows[0];
     } else {
-      padron = padronResult.rows[0];
+      // Si ya existe, actualiza la cantidad de votantes por si cambió
+      await pool.query(
+        "UPDATE padrones SET cantidad_votantes = $3 WHERE nro_escuela = $1 AND nro_mesa = $2",
+        [nro_escuela, nro_mesa, cantidad_votantes]
+      );
+      const actualizado = await pool.query(
+        "SELECT * FROM padrones WHERE nro_escuela = $1 AND nro_mesa = $2",
+        [nro_escuela, nro_mesa]
+      );
+      padron = actualizado.rows[0];
     }
 
     // Registrar sesión del usuario
@@ -76,13 +87,15 @@ app.post("/login", async (req, res) => {
 
     req.session.sesionId = sesionResult.rows[0].id;
 
-    // Redirigir al dashboard
     res.redirect("/dashboard");
   } catch (err) {
     console.error("Error en login:", err);
     res.render("login", { error: "Error interno del servidor", success: null });
   }
 });
+
+
+
 
 // === DASHBOARD ===
 app.get("/dashboard", async (req, res) => {
@@ -145,6 +158,8 @@ app.get("/dashboard", async (req, res) => {
 });
 
 // === REGISTRAR VOTOS ===
+
+// === REGISTRAR VOTOS ===
 app.post("/registrar-v", async (req, res) => {
   const { cantidad_votos } = req.body;
   const sesionId = req.session.sesionId;
@@ -160,30 +175,43 @@ app.post("/registrar-v", async (req, res) => {
 
     const { nro_escuela, nro_mesa } = sesion.rows[0];
 
+    // Buscar participación
     const participacion = await pool.query(
       "SELECT * FROM participaciones WHERE nro_escuela=$1 AND nro_mesa=$2",
       [nro_escuela, nro_mesa]
     );
 
-    let total_votaron = parseInt(cantidad_votos);
+    let votosNuevos = parseInt(cantidad_votos);
 
     if (participacion.rows.length === 0) {
+      // Primera carga
       await pool.query(
         "INSERT INTO participaciones (nro_escuela, nro_mesa, total_votaron, fecha_actualizacion) VALUES ($1, $2, $3, NOW())",
-        [nro_escuela, nro_mesa, total_votaron]
+        [nro_escuela, nro_mesa, votosNuevos]
       );
     } else {
+      // Acumula sobre el total existente
       await pool.query(
-        "UPDATE participaciones SET total_votaron=$1, fecha_actualizacion=NOW() WHERE nro_escuela=$2 AND nro_mesa=$3",
-        [total_votaron, nro_escuela, nro_mesa]
+        "UPDATE participaciones SET total_votaron = total_votaron + $1, fecha_actualizacion = NOW() WHERE nro_escuela=$2 AND nro_mesa=$3",
+        [votosNuevos, nro_escuela, nro_mesa]
       );
     }
 
+    // Obtener el padrón actualizado
     const padron = await pool.query(
       "SELECT cantidad_votantes FROM padrones WHERE nro_escuela=$1 AND nro_mesa=$2",
       [nro_escuela, nro_mesa]
     );
+
     const cantidad_votantes = padron.rows[0]?.cantidad_votantes || 0;
+
+    const totalVotosResult = await pool.query(
+      "SELECT total_votaron FROM participaciones WHERE nro_escuela=$1 AND nro_mesa=$2",
+      [nro_escuela, nro_mesa]
+    );
+
+    const total_votaron = totalVotosResult.rows[0]?.total_votaron || votosNuevos;
+
     const porcentaje =
       cantidad_votantes > 0
         ? ((total_votaron / cantidad_votantes) * 100).toFixed(2)
@@ -204,6 +232,7 @@ app.post("/registrar-v", async (req, res) => {
     res.render("dashboard", { error: "Error al registrar votos", success: null });
   }
 });
+
 
 // === CERRAR MESA ===
 app.post("/cerrar-mesa", async (req, res) => {

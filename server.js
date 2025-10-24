@@ -1,241 +1,162 @@
 import express from "express";
 import session from "express-session";
 import bodyParser from "body-parser";
-import path from "path";
-import { fileURLToPath } from "url";
-import dotenv from "dotenv";
+import cors from "cors";
 import { pool } from "./db.js";
 
-dotenv.config();
-
 const app = express();
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// ================== CONFIGURACIÓN GENERAL ==================
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(cors());
 app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname, "public")));
-app.set("views", path.join(__dirname, "views"));
-app.set("view engine", "ejs");
+app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(
   session({
-    secret: "clave-secreta",
+    secret: "clave_secreta_segura",
     resave: false,
-    saveUninitialized: false,
+    saveUninitialized: true,
   })
 );
 
-// ================== LOGIN Y REGISTRO ==================
-
-app.get("/", (req, res) => res.redirect("/login"));
-app.get("/login", (req, res) => res.render("login"));
-app.get("/registro", (req, res) => res.render("registro"));
-
-// Registro de nuevo usuario
-app.post("/registro", async (req, res) => {
-  const { nombre, apellido, dni } = req.body;
-  const password = dni.slice(-3);
-
-  try {
-    await pool.query(
-      "INSERT INTO usuarios (nombre, apellido, dni, password) VALUES ($1, $2, $3, $4)",
-      [nombre, apellido, dni, password]
-    );
-    res.render("login", { mensaje: `Usuario creado. Clave: ${password}` });
-  } catch (err) {
-    console.error("Error al registrar usuario:", err);
-    res.render("registro", { error: "Error al crear usuario" });
-  }
-});
-
-// ================== LOGIN ==================
-
+// === LOGIN DE USUARIO ===
 app.post("/login", async (req, res) => {
   const { dni, password, nro_escuela, nro_mesa } = req.body;
 
   try {
-    const result = await pool.query("SELECT * FROM usuarios WHERE dni=$1", [dni]);
-    if (result.rows.length === 0) return res.render("login", { error: "DNI no encontrado" });
-
-    const usuario = result.rows[0];
-    if (usuario.password !== password)
-      return res.render("login", { error: "Contraseña incorrecta" });
-
-    req.session.usuario = usuario;
-    req.session.nro_escuela = nro_escuela;
-    req.session.nro_mesa = nro_mesa;
-
-    // Buscar padrón
-    const padron = await pool.query(
-      "SELECT cantidad_votantes FROM padrones WHERE nro_escuela=$1 AND nro_mesa=$2",
-      [nro_escuela, nro_mesa]
+    const userResult = await pool.query(
+      "SELECT * FROM usuarios WHERE dni = $1 AND password = $2",
+      [dni, password]
     );
 
-    // Si no existe el padrón, mostrar pantalla para crearlo
-    if (padron.rows.length === 0) {
-      return res.render("crearPadron", { nro_escuela, nro_mesa });
+    if (userResult.rows.length === 0) {
+      return res.status(401).json({ message: "Credenciales inválidas" });
     }
 
-    // Crear participación si no existe
-    await pool.query(
-      `INSERT INTO participaciones (nro_escuela, nro_mesa, total_votaron, cerrado, fecha_actualizacion)
-       VALUES ($1, $2, 0, false, NOW())
-       ON CONFLICT (nro_escuela, nro_mesa) DO NOTHING`,
+    const user = userResult.rows[0];
+    req.session.userId = user.id;
+
+    // Verificar si existe el padrón para esa escuela y mesa
+    const padronResult = await pool.query(
+      "SELECT * FROM padrones WHERE nro_escuela = $1 AND nro_mesa = $2",
       [nro_escuela, nro_mesa]
     );
 
-    // Crear sesión del usuario
-    const sesion = await pool.query(
-      `INSERT INTO sesiones_usuario (usuario_id, nro_escuela, nro_mesa)
-       VALUES ($1, $2, $3) RETURNING id`,
-      [usuario.id, nro_escuela, nro_mesa]
-    );
-    req.session.sesion_id = sesion.rows[0].id;
+    // Si no existe, se crea automáticamente con cantidad_votantes = 0
+    let padron;
+    if (padronResult.rows.length === 0) {
+      const newPadron = await pool.query(
+        "INSERT INTO padrones (nro_escuela, nro_mesa, cantidad_votantes) VALUES ($1, $2, $3) RETURNING *",
+        [nro_escuela, nro_mesa, 0]
+      );
+      padron = newPadron.rows[0];
+    } else {
+      padron = padronResult.rows[0];
+    }
 
-    res.redirect("/dashboard");
+    // Crear o registrar sesión del usuario
+    const sesionResult = await pool.query(
+      `INSERT INTO sesiones_usuario (usuario_id, nro_escuela, nro_mesa)
+       VALUES ($1, $2, $3)
+       RETURNING id`,
+      [user.id, nro_escuela, nro_mesa]
+    );
+
+    req.session.sesionId = sesionResult.rows[0].id;
+
+    res.json({
+      message: "Login exitoso",
+      user: { nombre: user.nombre, apellido: user.apellido },
+      escuela: nro_escuela,
+      mesa: nro_mesa,
+      padron,
+    });
   } catch (err) {
     console.error("Error en login:", err);
-    res.render("login", { error: "Error al iniciar sesión" });
+    res.status(500).json({ message: "Error interno del servidor" });
   }
 });
 
-// ================== CREAR PADRÓN ==================
+// === CARGAR CANTIDAD DE VOTOS ===
+app.post("/registrar-votos", async (req, res) => {
+  const { total_votaron } = req.body;
+  const sesionId = req.session.sesionId;
 
-app.post("/crearPadron", async (req, res) => {
-  const { nro_escuela, nro_mesa, cantidad_votantes } = req.body;
-
-  try {
-    await pool.query(
-      "INSERT INTO padrones (nro_escuela, nro_mesa, cantidad_votantes) VALUES ($1, $2, $3)",
-      [nro_escuela, nro_mesa, cantidad_votantes]
-    );
-
-    await pool.query(
-      `INSERT INTO participaciones (nro_escuela, nro_mesa, total_votaron, cerrado, fecha_actualizacion)
-       VALUES ($1, $2, 0, false, NOW())
-       ON CONFLICT (nro_escuela, nro_mesa) DO NOTHING`,
-      [nro_escuela, nro_mesa]
-    );
-
-    res.redirect("/dashboard");
-  } catch (err) {
-    console.error("Error al crear padrón:", err);
-    res.render("crearPadron", {
-      nro_escuela,
-      nro_mesa,
-      error: "Error al guardar padrón",
-    });
+  if (!sesionId) {
+    return res.status(403).json({ message: "Sesión no válida" });
   }
-});
-
-// ================== DASHBOARD ==================
-
-app.get("/dashboard", async (req, res) => {
-  if (!req.session.usuario) return res.redirect("/login");
-  const { nro_escuela, nro_mesa } = req.session;
 
   try {
-    const padron = await pool.query(
-      "SELECT cantidad_votantes FROM padrones WHERE nro_escuela=$1 AND nro_mesa=$2",
-      [nro_escuela, nro_mesa]
-    );
-    const mesa = await pool.query(
-      "SELECT * FROM participaciones WHERE nro_escuela=$1 AND nro_mesa=$2",
-      [nro_escuela, nro_mesa]
+    // Obtener datos de la sesión
+    const sesion = await pool.query(
+      "SELECT nro_escuela, nro_mesa FROM sesiones_usuario WHERE id = $1",
+      [sesionId]
     );
 
-    const cantidad_votantes = padron.rows[0]?.cantidad_votantes || 0;
-    const total_votaron = mesa.rows[0]?.total_votaron || 0;
-    const cerrado = mesa.rows[0]?.cerrado || false;
-    const porcentaje = cantidad_votantes
-      ? ((total_votaron / cantidad_votantes) * 100).toFixed(2)
-      : 0;
+    if (sesion.rows.length === 0)
+      return res.status(404).json({ message: "Sesión no encontrada" });
 
-    res.render("dashboard", { nro_escuela, nro_mesa, porcentaje, cerrado });
-  } catch (err) {
-    console.error("Error al cargar dashboard:", err);
-    res.render("dashboard", { nro_escuela, nro_mesa, porcentaje: 0, cerrado: false });
-  }
-});
+    const { nro_escuela, nro_mesa } = sesion.rows[0];
 
-// ================== REGISTRAR VOTOS ==================
-
-app.post("/registrar", async (req, res) => {
-  if (!req.session.usuario)
-    return res.status(401).json({ error: "Sesión expirada" });
-
-  const { nro_escuela, nro_mesa, sesion_id } = req.session;
-  const { cantidad_votos } = req.body;
-
-  try {
-    // Registrar detalle
-    await pool.query(
-      "INSERT INTO registros (sesion_id, cantidad_votos) VALUES ($1, $2)",
-      [sesion_id, cantidad_votos]
-    );
-
-    // Actualizar total acumulado
-    await pool.query(
-      `UPDATE participaciones 
-       SET total_votaron = total_votaron + $1, fecha_actualizacion=NOW()
-       WHERE nro_escuela=$2 AND nro_mesa=$3 AND cerrado=false`,
-      [cantidad_votos, nro_escuela, nro_mesa]
-    );
-
-    // Calcular porcentaje actualizado
-    const padron = await pool.query(
-      "SELECT cantidad_votantes FROM padrones WHERE nro_escuela=$1 AND nro_mesa=$2",
-      [nro_escuela, nro_mesa]
-    );
-    const total = padron.rows[0]?.cantidad_votantes || 1;
-
+    // Buscar o crear participación
     const participacion = await pool.query(
-      "SELECT total_votaron FROM participaciones WHERE nro_escuela=$1 AND nro_mesa=$2",
+      "SELECT * FROM participaciones WHERE nro_escuela = $1 AND nro_mesa = $2",
       [nro_escuela, nro_mesa]
     );
-    const total_votaron = participacion.rows[0]?.total_votaron || 0;
 
-    const porcentaje = ((total_votaron / total) * 100).toFixed(2);
-    res.json({ success: true, porcentaje });
+    if (participacion.rows.length === 0) {
+      await pool.query(
+        "INSERT INTO participaciones (nro_escuela, nro_mesa, total_votaron) VALUES ($1, $2, $3)",
+        [nro_escuela, nro_mesa, total_votaron]
+      );
+    } else {
+      await pool.query(
+        "UPDATE participaciones SET total_votaron = $1, fecha_actualizacion = CURRENT_TIMESTAMP WHERE nro_escuela = $2 AND nro_mesa = $3",
+        [total_votaron, nro_escuela, nro_mesa]
+      );
+    }
+
+    res.json({ message: "Votos registrados correctamente" });
   } catch (err) {
-    console.error("Error al registrar votos:", err);
-    res.json({ error: "Error al registrar votos" });
+    console.error("Error registrando votos:", err);
+    res.status(500).json({ message: "Error al registrar votos" });
   }
 });
 
-// ================== CERRAR MESA ==================
+// === CERRAR MESA ===
+app.post("/cerrar-mesa", async (req, res) => {
+  const sesionId = req.session.sesionId;
 
-app.post("/cerrar", async (req, res) => {
-  if (!req.session.usuario)
-    return res.status(401).json({ error: "Sesión expirada" });
-
-  const { nro_escuela, nro_mesa } = req.session;
+  if (!sesionId)
+    return res.status(403).json({ message: "Sesión no válida o expirada" });
 
   try {
+    const sesion = await pool.query(
+      "SELECT nro_escuela, nro_mesa FROM sesiones_usuario WHERE id = $1",
+      [sesionId]
+    );
+
+    if (sesion.rows.length === 0)
+      return res.status(404).json({ message: "Sesión no encontrada" });
+
+    const { nro_escuela, nro_mesa } = sesion.rows[0];
+
     await pool.query(
-      "UPDATE participaciones SET cerrado=true, fecha_actualizacion=NOW() WHERE nro_escuela=$1 AND nro_mesa=$2",
+      "UPDATE participaciones SET cerrado = true WHERE nro_escuela = $1 AND nro_mesa = $2",
       [nro_escuela, nro_mesa]
     );
-    res.json({ success: true });
+
+    res.json({ message: "Mesa cerrada correctamente" });
   } catch (err) {
-    console.error("Error al cerrar mesa:", err);
-    res.json({ error: "Error al cerrar mesa" });
+    console.error("Error cerrando mesa:", err);
+    res.status(500).json({ message: "Error al cerrar mesa" });
   }
 });
 
-// ================== LOGOUT ==================
-
+// === LOGOUT ===
 app.post("/logout", (req, res) => {
-  req.session.destroy((err) => {
-    if (err) return res.send("Error al cerrar sesión.");
-    res.clearCookie("connect.sid");
-    res.redirect("/login");
+  req.session.destroy(() => {
+    res.json({ message: "Sesión finalizada" });
   });
 });
 
-// ================== SERVIDOR ==================
-
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`✅ Servidor corriendo en puerto ${PORT}`));

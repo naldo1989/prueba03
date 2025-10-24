@@ -1,134 +1,28 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ingreso al sistema</title>
+  <meta charset="UTF-8" />
+  <title>Login</title>
   <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(135deg, #1e3c72, #2a5298);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-      color: #fff;
-      padding: 15px;
-    }
-
-    .container {
-      background: rgba(255, 255, 255, 0.1);
-      padding: 25px 20px;
-      border-radius: 15px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
-      width: 100%;
-      max-width: 380px;
-      text-align: center;
-      backdrop-filter: blur(8px);
-    }
-
-    h2 {
-      font-size: 1.5em;
-      margin-bottom: 15px;
-    }
-
-    label {
-      display: block;
-      text-align: left;
-      font-weight: 500;
-      font-size: 0.95em;
-      margin-top: 10px;
-    }
-
-    input {
-      width: 100%;
-      padding: 12px;
-      margin-top: 5px;
-      border: none;
-      border-radius: 10px;
-      font-size: 1em;
-      box-sizing: border-box;
-    }
-
-    input:focus {
-      outline: 2px solid #00eaff;
-      background: rgba(255,255,255,0.2);
-      color: #fff;
-    }
-
-    button {
-      margin-top: 20px;
-      width: 100%;
-      padding: 12px;
-      background-color: #4CAF50;
-      border: none;
-      border-radius: 10px;
-      color: white;
-      font-size: 1.1em;
-      cursor: pointer;
-      transition: 0.3s;
-      font-weight: bold;
-    }
-
-    button:hover {
-      background-color: #45a049;
-      transform: scale(1.03);
-    }
-
-    a {
-      display: block;
-      margin-top: 15px;
-      color: #00eaff;
-      text-decoration: none;
-      font-weight: bold;
-      font-size: 0.95em;
-    }
-
-    a:hover {
-      text-decoration: underline;
-    }
-
-    .error {
-      color: #ff6b6b;
-      font-weight: bold;
-    }
-
-    .mensaje {
-      color: #a6ff96;
-      font-weight: bold;
-    }
+    body { font-family: Arial, sans-serif; text-align: center; padding-top: 60px; }
+    input, button { margin: 6px; padding: 10px; width: 220px; }
+    .error { color: red; margin-top: 10px; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2>Ingreso al sistema</h2>
+  <h2>Ingreso al Sistema</h2>
+  <form action="/login" method="POST">
+    <input type="text" name="dni" placeholder="DNI" required /><br>
+    <input type="password" name="password" placeholder="Contraseña" required /><br>
+    <input type="text" name="nro_escuela" placeholder="Nro. Escuela" required /><br>
+    <input type="text" name="nro_mesa" placeholder="Nro. Mesa" required /><br>
+    <button type="submit">Ingresar</button>
+  </form>
 
-    <% if (typeof error !== 'undefined') { %>
-      <p class="error"><%= error %></p>
-    <% } %>
+  <% if (error) { %>
+    <p class="error"><%= error %></p>
+  <% } %>
 
-    <% if (typeof mensaje !== 'undefined') { %>
-      <p class="mensaje"><%= mensaje %></p>
-    <% } %>
-
-    <form action="/login" method="POST" autocomplete="off">
-      <label>DNI:</label>
-      <input type="text" name="dni" inputmode="numeric" required>
-
-      <label>Contraseña:</label>
-      <input type="password" name="password" required>
-
-      <label>N° de E:</label>
-      <input type="text" name="nro_escuela" required>
-
-      <label>N° de M:</label>
-      <input type="text" name="nro_mesa" required>
-
-      <button type="submit">Ingresar</button>
-    </form>
-
-    <a href="/registro">¿No tienes cuenta? Registrate aquí</a>
-  </div>
+  <p>¿No tenés usuario? <a href="/registro">Registrate</a></p>
 </body>
 </html>

@@ -14,8 +14,10 @@
   <form action="/login" method="POST">
     <input type="text" name="dni" placeholder="DNI" required /><br>
     <input type="password" name="password" placeholder="Contraseña" required /><br>
-    <input type="text" name="nro_escuela" placeholder="Nro. Escuela" required /><br>
-    <input type="text" name="nro_mesa" placeholder="Nro. Mesa" required /><br>
+    <input type="text" name="nro_escuela" placeholder="Nro. E" required /><br>
+    <input type="text" name="nro_mesa" placeholder="Nro. M" required /><br>
+  <label for="cantidad_votantes">Cantidad de vs:</label>
+  <input type="number" name="cantidad_votantes" min="1" required />
     <button type="submit">Ingresar</button>
   </form>
 

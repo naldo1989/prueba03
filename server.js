@@ -12,6 +12,7 @@ const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// ================== CONFIGURACIÓN GENERAL ==================
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, "public")));
@@ -49,7 +50,8 @@ app.post("/registro", async (req, res) => {
   }
 });
 
-// Login de usuario
+// ================== LOGIN ==================
+
 app.post("/login", async (req, res) => {
   const { dni, password, nro_escuela, nro_mesa } = req.body;
 
@@ -65,25 +67,24 @@ app.post("/login", async (req, res) => {
     req.session.nro_escuela = nro_escuela;
     req.session.nro_mesa = nro_mesa;
 
-    // Verificar padrón
+    // Buscar padrón
     const padron = await pool.query(
       "SELECT cantidad_votantes FROM padrones WHERE nro_escuela=$1 AND nro_mesa=$2",
       [nro_escuela, nro_mesa]
     );
-    if (padron.rows.length === 0)
-      return res.render("login", { error: "No existe padrón para esa escuela/mesa" });
+
+    // Si no existe el padrón, mostrar pantalla para crearlo
+    if (padron.rows.length === 0) {
+      return res.render("crearPadron", { nro_escuela, nro_mesa });
+    }
 
     // Crear participación si no existe
-    const existe = await pool.query(
-      "SELECT id FROM participaciones WHERE nro_escuela=$1 AND nro_mesa=$2",
+    await pool.query(
+      `INSERT INTO participaciones (nro_escuela, nro_mesa, total_votaron, cerrado, fecha_actualizacion)
+       VALUES ($1, $2, 0, false, NOW())
+       ON CONFLICT (nro_escuela, nro_mesa) DO NOTHING`,
       [nro_escuela, nro_mesa]
     );
-    if (existe.rows.length === 0) {
-      await pool.query(
-        "INSERT INTO participaciones (nro_escuela, nro_mesa, total_votaron, cerrado) VALUES ($1, $2, 0, false)",
-        [nro_escuela, nro_mesa]
-      );
-    }
 
     // Crear sesión del usuario
     const sesion = await pool.query(
@@ -97,6 +98,35 @@ app.post("/login", async (req, res) => {
   } catch (err) {
     console.error("Error en login:", err);
     res.render("login", { error: "Error al iniciar sesión" });
+  }
+});
+
+// ================== CREAR PADRÓN ==================
+
+app.post("/crearPadron", async (req, res) => {
+  const { nro_escuela, nro_mesa, cantidad_votantes } = req.body;
+
+  try {
+    await pool.query(
+      "INSERT INTO padrones (nro_escuela, nro_mesa, cantidad_votantes) VALUES ($1, $2, $3)",
+      [nro_escuela, nro_mesa, cantidad_votantes]
+    );
+
+    await pool.query(
+      `INSERT INTO participaciones (nro_escuela, nro_mesa, total_votaron, cerrado, fecha_actualizacion)
+       VALUES ($1, $2, 0, false, NOW())
+       ON CONFLICT (nro_escuela, nro_mesa) DO NOTHING`,
+      [nro_escuela, nro_mesa]
+    );
+
+    res.redirect("/dashboard");
+  } catch (err) {
+    console.error("Error al crear padrón:", err);
+    res.render("crearPadron", {
+      nro_escuela,
+      nro_mesa,
+      error: "Error al guardar padrón",
+    });
   }
 });
 

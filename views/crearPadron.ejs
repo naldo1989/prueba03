@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Crear Padrón</title>
+</head>
+<body>
+  <h1>Registrar padrón</h1>
+  <p>Escuela: <%= nro_escuela %> | Mesa: <%= nro_mesa %></p>
+
+  <form action="/crearPadron" method="POST">
+    <input type="hidden" name="nro_escuela" value="<%= nro_escuela %>">
+    <input type="hidden" name="nro_mesa" value="<%= nro_mesa %>">
+
+    <label for="cantidad_votantes">Cantidad de votantes:</label>
+    <input type="number" name="cantidad_votantes" required min="1">
+
+    <button type="submit">Guardar padrón</button>
+  </form>
+</body>
+</html>

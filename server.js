@@ -128,7 +128,7 @@ app.post("/registrar-votos", async (req, res) => {
       );
     } else {
       await pool.query(
-        "UPDATE participaciones SET total_votaron = $1, fecha_actualizacion = CURRENT_TIMESTAMP WHERE nro_escuela = $2 AND nro_mesa = $3",
+        "UPDATE participaciones SET total_votaron = $1, fecha_actualizacion = NOW() WHERE nro_escuela = $2 AND nro_mesa = $3",
         [total_votaron, nro_escuela, nro_mesa]
       );
     }
